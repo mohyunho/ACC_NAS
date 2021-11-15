@@ -185,6 +185,12 @@ def eaSimple(population, toolbox, cxpb, mutpb, ngen, sel_op, stats=None,
     if verbose:
         print(logbook.stream)
 
+    ####################
+    # Initial population log
+    gen = 0
+    population_temp = copy.deepcopy(population)
+    log_function(population_temp, gen)
+    ############à
 
     if sel_op == "nsga2":
         # Begin the generational process
