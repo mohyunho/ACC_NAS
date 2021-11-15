@@ -327,7 +327,6 @@ def main():
         train_label_array = train_label_array,
         val_sample_array = val_sample_array,
         val_label_array = val_label_array,
-        constant = cs,
         batch=bs,
         epoch = ep,
         patience = pt,
