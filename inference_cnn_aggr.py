@@ -240,6 +240,7 @@ def main():
     train_units_samples_lst =[]
     train_units_labels_lst = []
 
+
     for index in units_index_train:
         print("Load data index: ", index)
         sample_array, label_array = load_array (sample_dir_path, index, win_len, win_stride)
@@ -248,6 +249,10 @@ def main():
         print("label_array.shape", label_array.shape)
         sample_array = sample_array[::sub]
         label_array = label_array[::sub]
+
+        sample_array = sample_array.astype(np.float32)
+        label_array = label_array.astype(np.float32)
+
         print("sub sample_array.shape", sample_array.shape)
         print("sub label_array.shape", label_array.shape)
         train_units_samples_lst.append(sample_array)

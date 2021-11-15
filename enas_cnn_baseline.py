@@ -218,12 +218,14 @@ def main():
     print("sample_array.shape", sample_array.shape)
     print("label_array.shape", label_array.shape)
 
-    sample_array = sample_array.reshape(sample_array.shape[0], sample_array.shape[2])
+    # sample_array = sample_array.reshape(sample_array.shape[0], sample_array.shape[2])
     print("sample_array_reshape.shape", sample_array.shape)
     print("label_array_reshape.shape", label_array.shape)
-    feat_len = sample_array.shape[1]
+    window_length = sample_array.shape[1]
+    feat_len = sample_array.shape[2]
     num_samples = sample_array.shape[0]
-    print ("feat_len", feat_len)
+    print ("window_length", window_length)
+    print("feat_len", feat_len)
 
     train_sample_array = sample_array[:int(num_samples*(1-vs))]
     train_label_array = label_array[:int(num_samples*(1-vs))]
