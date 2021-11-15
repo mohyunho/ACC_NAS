@@ -79,6 +79,7 @@ def main():
     new_file_path = os.path.join(directory_path, 'mute_log_%s_%s_soo_%s_test.csv' %(pop,gen,trial))
     mute_log_df = pd.read_csv(new_file_path)
 
+####################################
     # Draw scatter plot
     fig = matplotlib.figure.Figure(figsize=(3, 3))
     agg.FigureCanvasAgg(fig)
@@ -114,6 +115,51 @@ def main():
     fig.savefig(os.path.join(pic_dir, 'val_test_rmse_%s_%s_%s.png' % (pop, gen, trial)), dpi=1500, bbox_inches='tight')
     # fig.savefig(os.path.join(pic_dir, 'val_test_rmse_%s_%s_%s.eps' % (pop, gen, trial)), dpi=1500, bbox_inches='tight')
     # fig.savefig(os.path.join(pic_dir, 'val_test_rmse_%s_%s_%s.pdf' % (pop, gen, trial)), bbox_inches='tight')
+
+
+############################à
+
+    #
+    #
+    # # Draw scatter plot
+    # fig = matplotlib.figure.Figure(figsize=(3, 3))
+    # agg.FigureCanvasAgg(fig)
+    # cmap = get_cmap(10)
+    # ax = fig.add_subplot(1, 1, 1)
+    #
+    # # ax.scatter(mute_log_df['fitness_1'], mute_log_df['test_rmse'], facecolor=(1.0, 1.0, 0.4), edgecolors=(0.0, 0.0, 0.0), zorder=1,
+    # #            c=cmap(0), s=20 )
+    #
+    # ax.scatter(mute_log_df['fitness_1'], mute_log_df['archt_score'], facecolor=(1.0, 1.0, 0.4),
+    #            edgecolors=(0.0, 0.0, 0.0), zorder=1, s=20 )
+    #
+    # x_min = 0
+    # x_max = 40
+    # x_sp = 5
+    # y_min =
+    # y_max =
+    # y_sp =
+    #
+    # x_range = np.arange(x_min, x_max, 2 * x_sp)
+    # ax.set_xticks(x_range)
+    # ax.set_xticklabels(x_range)
+    # ax.set_yticks(np.arange(y_min, y_max, 2 * y_sp))
+    # ax.set_xlim(x_min, x_max)
+    # ax.set_ylim(y_min, y_max)
+    # # ax.set_title("Solutions and pareto front", fontsize=15)
+    # ax.set_xlabel('Archt. score', fontsize=12)
+    # ax.set_ylabel('Test RMSE', fontsize=12)
+    # # ax.legend(fontsize=9)
+    #
+    # # Save figure
+    # # ax.set_rasterized(True)
+    # fig.savefig(os.path.join(pic_dir, 'val_archt_score_%s_%s_%s.png' % (pop, gen, trial)), dpi=1500, bbox_inches='tight')
+    # # fig.savefig(os.path.join(pic_dir, 'val_archt_score_%s_%s_%s.eps' % (pop, gen, trial)), dpi=1500, bbox_inches='tight')
+    # # fig.savefig(os.path.join(pic_dir, 'val_archt_score_%s_%s_%s.pdf' % (pop, gen, trial)), bbox_inches='tight')
+    #
+    #
+
+    ############################à
 
     print ("Plot save")
 

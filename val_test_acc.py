@@ -296,6 +296,9 @@ def main():
     train_params = []
     train_time = []
 
+    # archt_scores = []
+
+
     # Iterows
 
     # for index, ind in mute_log_df.iterrows():
@@ -307,6 +310,14 @@ def main():
         n_mlp = 10 * int(ind['params_4'])
         lr = 10**(-1*int(ind['params_5']))
 
+###################
+        model = one_dcnn(n_layers, n_filters, kernel_size, n_mlp, train_sample_array, initializer)
+
+        # Calculate model's score
+        # archt_score =
+
+
+###################
         model = one_dcnn(n_layers, n_filters, kernel_size, n_mlp, train_sample_array, initializer)
 
         # print("Initializing network...")
@@ -339,6 +350,8 @@ def main():
         train_params.append(num_tran_params)
         train_time.append(training_time)
 
+        archt_scores.append(archt_score)
+
 
 
 ########
@@ -348,9 +361,9 @@ def main():
     mute_log_df['train_params'] = train_params
     mute_log_df['train_time'] = train_time
 
+    mute_log_df['archt_scores'] = archt_scores
 
     # Save to csv
-
     new_file_path = os.path.join(directory_path, 'mute_log_%s_%s_soo_%s_test.csv' %(pop,gen,trial))
     mute_log_df.to_csv(new_file_path, index=False)
 
