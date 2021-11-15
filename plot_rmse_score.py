@@ -85,15 +85,22 @@ def main():
     cmap = get_cmap(len(prft_trial_lst))
     ax = fig.add_subplot(1, 1, 1)
 
-    ax.scatter(prft[col_a], prft[col_b], facecolor=(1.0, 1.0, 0.4), edgecolors=(0.0, 0.0, 0.0), zorder=1,
-               c=cmap(0), s=20, )
+    ax.scatter(mute_log_df['fitness_1'], mute_log_df['test_rmse'], facecolor=(1.0, 1.0, 0.4), edgecolors=(0.0, 0.0, 0.0), zorder=1,
+               c=cmap(0), s=20 )
+
+    x_min = 0
+    x_max = 40
+    x_sp = 5
+    y_min = 0
+    y_max = 40
+    y_sp = 5
 
     x_range = np.arange(x_min, x_max, 2 * x_sp)
     ax.set_xticks(x_range)
     ax.set_xticklabels(x_range, rotation=60)
     ax.set_yticks(np.arange(y_min, y_max, 2 * y_sp))
     ax.set_xlim(x_min, x_max)
-    ax.set_ylim(0, y_max)
+    ax.set_ylim(y_min, y_max)
     # ax.set_title("Solutions and pareto front", fontsize=15)
     ax.set_xlabel('Validation RMSE', fontsize=12)
     ax.set_ylabel('Test RMSE', fontsize=12)
@@ -101,9 +108,9 @@ def main():
 
     # Save figure
     # ax.set_rasterized(True)
-    fig.savefig(os.path.join(pic_dir, 'prft_aggr_%s_%s.png' % (pop_size, n_generations)), dpi=1500, bbox_inches='tight')
-    fig.savefig(os.path.join(pic_dir, 'prft_aggr_%s_%s.eps' % (pop_size, n_generations)), dpi=1500, bbox_inches='tight')
-    fig.savefig(os.path.join(pic_dir, 'prft_aggr_%s_%s.pdf' % (pop_size, n_generations)), bbox_inches='tight')
+    fig.savefig(os.path.join(pic_dir, 'val_test_rmse_%s_%s_%s.png' % (pop, gen, trial)), dpi=1500, bbox_inches='tight')
+    fig.savefig(os.path.join(pic_dir, 'val_test_rmse_%s_%s_%s.eps' % (pop, gen, trial)), dpi=1500, bbox_inches='tight')
+    fig.savefig(os.path.join(pic_dir, 'val_test_rmse_%s_%s_%s.pdf' % (pop, gen, trial)), bbox_inches='tight')
 
 
 
