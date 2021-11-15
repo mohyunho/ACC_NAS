@@ -13,7 +13,7 @@ import seaborn as sns
 import random
 import importlib
 from scipy.stats import randint, expon, uniform
-
+from tqdm import tqdm
 import sklearn as sk
 from sklearn import svm
 from sklearn.utils import shuffle
