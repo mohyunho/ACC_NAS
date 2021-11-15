@@ -354,7 +354,7 @@ def main():
     new_file_path = os.path.join(directory_path, 'mute_log_%s_%s_soo_%s_test.csv' %(pop,gen,trial))
     mute_log_df.to_csv(new_file_path, index=False)
 
-
+    print ("Test results are saved")
 
 if __name__ == '__main__':
     main()
