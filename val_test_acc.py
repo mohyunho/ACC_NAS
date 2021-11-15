@@ -352,7 +352,7 @@ def main():
     # Save to csv
 
     new_file_path = os.path.join(directory_path, 'mute_log_%s_%s_soo_%s_test.csv' %(pop,gen,trial))
-    mutate_log_df.to_csv(new_file_path, index=False)
+    mute_log_df.to_csv(new_file_path, index=False)
 
 
 
