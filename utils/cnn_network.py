@@ -129,7 +129,7 @@ class network_fit(object):
 
         model.compile(loss='mean_squared_error', optimizer=amsgrad, metrics='mae')
         history = model.fit(train_sample_array, train_label_array, epochs=self.epoch, batch_size=self.batch,
-                            validation_data=(val_sample_array, val_label_array), verbose=2,
+                            validation_data=(val_sample_array, val_label_array), verbose=0,
                             callbacks=[EarlyStopping(monitor='val_loss', min_delta=0, patience=self.patience, verbose=1,
                                                                mode='min'),
                                        ModelCheckpoint(self.model_path, monitor='val_loss',
