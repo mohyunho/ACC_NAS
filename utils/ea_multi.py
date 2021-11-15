@@ -16,6 +16,7 @@ import os
 import pandas as pd
 import copy
 
+from utils.cnn_task import Task
 
 # os.remove("logbook.pkl")
 
