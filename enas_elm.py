@@ -29,12 +29,16 @@ from sklearn import pipeline
 from sklearn.metrics import mean_squared_error
 from math import sqrt
 
+
 from utils.elm_network import network_fit
 
 from utils.hpelm import ELM, HPELM
 from utils.elm_task import SimpleNeuroEvolutionTask
 from utils.ea_multi import GeneticAlgorithm
 
+
+# random seed predictable
+jobs = 1
 
 
 
@@ -48,9 +52,10 @@ tf_temp_path = os.path.join(current_dir, 'TF_Model_tf')
 
 pic_dir = os.path.join(current_dir, 'Figures')
 
+
+# Log file path of EA in csv
 # directory_path = current_dir + '/EA_log'
 directory_path = os.path.join(current_dir, 'EA_log')
-
 '''
 load array from npz files
 '''
@@ -181,10 +186,8 @@ def main():
 
     device = args.device
     obj = args.obj
-    trial = args.t
 
-    # random seed predictable
-    jobs = 1
+    trial = args.t
     seed = trial
     random.seed(seed)
     np.random.seed(seed)
@@ -251,9 +254,9 @@ def main():
     mut_prob = 0.5  # 0.7
     cx_op = "one_point"
     mut_op = "uniform"
-    sel_op = "nsga2"
+    sel_op = "best"
     other_args = {
-        'mut_gene_probability': 0.4  # 0.1
+        'mut_gene_probability': 0.3  # 0.1
     }
 
 
@@ -272,29 +275,43 @@ def main():
 
 
     # Save log file of EA in csv
-    # recursive_clean(directory_path)
-    # if not os.path.exists(directory_path):
-    #     os.makedirs(directory_path)
-    mutate_log_path = 'EA_log/mute_log_%s_%s_%s.csv' % (pop_size, n_generations, trial)
-    mutate_log_col = ['idx', 'params_1', 'params_2', 'params_3', 'params_4', 'fitness_1', 'fitness_2', 'hypervolume', 'gen']
+    recursive_clean(directory_path)
+    if not os.path.exists(directory_path):
+        os.makedirs(directory_path)
+    mutate_log_path = 'EA_log/mute_log_t-%s_%s_%s.csv' % (trial, pop_size, n_generations)
+    mutate_log_col = ['idx', 'params_1', 'params_2', 'params_3', 'params_4', 'fitness', 'penalty', 'val_rmse', 'gen']
     mutate_log_df = pd.DataFrame(columns=mutate_log_col, index=None)
     mutate_log_df.to_csv(mutate_log_path, index=False)
 
-    prft_path = os.path.join(directory_path, 'prft_out_%s_%s_%s.csv' % (pop_size, n_generations, trial))
+    # prft_path = os.path.join(directory_path, 'prft_out_%s_%s.csv' % (pop_size, n_generations))
 
 
-    def log_function(population, gen, cs, hv, mutate_log_path = mutate_log_path):
+    def log_function(population, gen, cs, mutate_log_path = mutate_log_path):
         for i in range(len(population)):
             indiv = population[i]
+            lin_check = indiv[3]
             if  indiv == []:
                 "non_mutated empty"
                 pass
             else:
                 # print ("i: ", i)
                 indiv.append(indiv.fitness.values[0])
-                indiv.append(indiv.fitness.values[1])
+
+                # append penalty
+                if lin_check == 1:
+                    lin_nrn = 20
+                else:
+                    lin_nrn = 0
+
+
+                num_nrn = indiv[1]*10 + indiv[2]*10 + lin_nrn
+                penalty = num_nrn * cs
+                val_rmse = indiv.fitness.values[0] - penalty
+
+                indiv.append(penalty)
+                indiv.append(val_rmse)
+
                 # append val_rmse
-                indiv.append(hv)
                 indiv.append(gen)
 
         temp_df = pd.DataFrame(np.array(population), index=None)
@@ -331,7 +348,6 @@ def main():
         jobs=jobs,
         log_function=log_function,
         cs = cs,
-        prft_path=prft_path,
         **other_args
     )
 

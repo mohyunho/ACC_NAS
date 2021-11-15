@@ -31,20 +31,36 @@ initializer = GlorotNormal(seed=0)
 #initializer = GlorotUniform(seed=0)
 
 
-def one_dcnn(n_filters, kernel_size, input_array, initializer):
+def one_dcnn(n_layers, n_filters, kernel_size, n_mlp, input_array, initializer):
 
     cnn = Sequential(name='one_d_cnn')
-    cnn.add(Conv1D(filters=n_filters, kernel_size=kernel_size, kernel_initializer=initializer, padding='same', input_shape=(input_array.shape[1],input_array.shape[2])))
-    # cnn.add(BatchNormalization())
-    cnn.add(Activation('relu'))
-    cnn.add(Conv1D(filters=n_filters, kernel_size=kernel_size, kernel_initializer=initializer, padding='same'))
-    # cnn.add(BatchNormalization())
-    cnn.add(Activation('relu'))
-    cnn.add(Conv1D(filters=1, kernel_size=kernel_size, kernel_initializer=initializer, padding='same'))
-    # cnn.add(BatchNormalization())
-    cnn.add(Activation('relu'))
+    if n_layers == 1:
+        cnn.add(Conv1D(filters=n_filters, kernel_size=kernel_size, kernel_initializer=initializer, padding='same', input_shape=(input_array.shape[1],input_array.shape[2])))
+        # cnn.add(BatchNormalization())
+        cnn.add(Activation('relu'))
+
+    elif n_layers == 2:
+        cnn.add(Conv1D(filters=n_filters, kernel_size=kernel_size, kernel_initializer=initializer, padding='same', input_shape=(input_array.shape[1],input_array.shape[2])))
+        # cnn.add(BatchNormalization())
+        cnn.add(Activation('relu'))
+        cnn.add(Conv1D(filters=1, kernel_size=kernel_size, kernel_initializer=initializer, padding='same'))
+        # cnn.add(BatchNormalization())
+        cnn.add(Activation('relu'))
+
+    else:
+        cnn.add(Conv1D(filters=n_filters, kernel_size=kernel_size, kernel_initializer=initializer, padding='same', input_shape=(input_array.shape[1],input_array.shape[2])))
+        # cnn.add(BatchNormalization())
+        cnn.add(Activation('relu'))
+        for loop in range(n_layers-2):
+            cnn.add(Conv1D(filters=n_filters, kernel_size=kernel_size, kernel_initializer=initializer, padding='same'))
+            # cnn.add(BatchNormalization())
+            cnn.add(Activation('relu'))
+        cnn.add(Conv1D(filters=1, kernel_size=kernel_size, kernel_initializer=initializer, padding='same'))
+        # cnn.add(BatchNormalization())
+        cnn.add(Activation('relu'))
+
     cnn.add(Flatten())
-    cnn.add(Dense(50, kernel_initializer=initializer))
+    cnn.add(Dense(n_mlp, kernel_initializer=initializer))
     cnn.add(Activation('relu'))
     cnn.add(Dense(1, kernel_initializer=initializer))
     cnn.add(Activation("linear"))
