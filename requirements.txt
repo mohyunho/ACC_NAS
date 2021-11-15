@@ -1,0 +1,10 @@
+h5py
+numpy
+pandas
+matplotlib
+seaborn
+sklearn
+tensorflow-gpu
+scikit-learn
+tqdm
+
