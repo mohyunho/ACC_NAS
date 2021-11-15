@@ -300,11 +300,11 @@ def main():
 
     # for index, ind in mute_log_df.iterrows():
     for index, ind in tqdm(mute_log_df.iterrows(), total=mute_log_df.shape[0]):
-        n_layers = ind['params_1'].values[0]
-        n_filters = ind['params_2'].values[0]
-        kernel_size = ind['params_3'].values[0]
-        n_mlp = 10 * ind['params_4'].values[0]
-        lr = 10**(-1*ind['params_5'].values[0])
+        n_layers = ind['params_1']
+        n_filters = ind['params_2']
+        kernel_size = ind['params_3']
+        n_mlp = 10 * ind['params_4']
+        lr = 10**(-1*ind['params_5'])
 
         model = one_dcnn(n_layers, n_filters, kernel_size, n_mlp, train_sample_array, initializer)
 
