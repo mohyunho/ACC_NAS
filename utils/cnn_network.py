@@ -132,7 +132,7 @@ class network_fit(object):
                             validation_data=(val_sample_array, val_label_array), verbose=2,
                             callbacks=[EarlyStopping(monitor='val_loss', min_delta=0, patience=self.patience, verbose=1,
                                                                mode='min'),
-                                       ModelCheckpoint(self.model_temp_path, monitor='val_loss',
+                                       ModelCheckpoint(self.model_path, monitor='val_loss',
                                                                  save_best_only=True, mode='min', verbose=1)]
                                       )
 
