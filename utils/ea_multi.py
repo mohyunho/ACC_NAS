@@ -7,7 +7,6 @@ Date:
 import random
 import pathos
 import numpy as np
-from utils.elm_task import Task
 from functools import partial
 import array
 from deap import base, algorithms, creator, tools
