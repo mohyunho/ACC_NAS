@@ -61,6 +61,38 @@ pic_dir = os.path.join(current_dir, 'Figures')
 directory_path = os.path.join(current_dir, 'EA_log')
 
 
+'''
+load array from npz files
+'''
+def load_part_array (sample_dir_path, unit_num, win_len, stride, part_num):
+    filename =  'Unit%s_win%s_str%s_part%s.npz' %(str(int(unit_num)), win_len, stride, part_num)
+    filepath =  os.path.join(sample_dir_path, filename)
+    loaded = np.load(filepath)
+    return loaded['sample'], loaded['label']
+
+def load_part_array_merge (sample_dir_path, unit_num, win_len, win_stride, partition):
+    sample_array_lst = []
+    label_array_lst = []
+    print ("Unit: ", unit_num)
+    for part in range(partition):
+      print ("Part.", part+1)
+      sample_array, label_array = load_part_array (sample_dir_path, unit_num, win_len, win_stride, part+1)
+      sample_array_lst.append(sample_array)
+      label_array_lst.append(label_array)
+    sample_array = np.dstack(sample_array_lst)
+    label_array = np.concatenate(label_array_lst)
+    sample_array = sample_array.transpose(2, 0, 1)
+    print ("sample_array.shape", sample_array.shape)
+    print ("label_array.shape", label_array.shape)
+    return sample_array, label_array
+
+
+def load_array (sample_dir_path, unit_num, win_len, stride):
+    filename =  'Unit%s_win%s_str%s.npz' %(str(int(unit_num)), win_len, stride)
+    filepath =  os.path.join(sample_dir_path, filename)
+    loaded = np.load(filepath)
+
+    return loaded['sample'].transpose(2, 0, 1), loaded['label']
 
 def rmse(y_true, y_pred):
     return backend.sqrt(backend.mean(backend.square(y_pred - y_true), axis=-1))
@@ -81,6 +113,39 @@ def get_flops(model):
         opts = tf.compat.v1.profiler.ProfileOptionBuilder.float_operation()
         flops = tf.compat.v1.profiler.profile(graph=graph, run_meta=run_meta, cmd="op", options=opts)
         return flops.total_float_ops
+
+
+def shuffle_array(sample_array, label_array):
+    ind_list = list(range(len(sample_array)))
+    print("ind_list befor: ", ind_list[:10])
+    print("ind_list befor: ", ind_list[-10:])
+    ind_list = shuffle(ind_list)
+    print("ind_list after: ", ind_list[:10])
+    print("ind_list after: ", ind_list[-10:])
+    print("Shuffeling in progress")
+    shuffle_sample = sample_array[ind_list, :, :]
+    shuffle_label = label_array[ind_list,]
+    return shuffle_sample, shuffle_label
+
+
+def release_list(a):
+   del a[:]
+   del a
+
+
+def recursive_clean(directory_path):
+    """clean the whole content of :directory_path:"""
+    if os.path.isdir(directory_path) and os.path.exists(directory_path):
+        files = glob.glob(directory_path + '*')
+        for file_ in files:
+            if os.path.isdir(file_):
+                recursive_clean(file_ + '/')
+            else:
+                os.remove(file_)
+
+units_index_train = [2.0, 5.0, 10.0, 16.0, 18.0, 20.0]
+units_index_test = [11.0, 14.0, 15.0]
+
 
 initializer = GlorotNormal(seed=0)
 # initializer = GlorotUniform(seed=0)
