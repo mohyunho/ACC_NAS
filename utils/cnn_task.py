@@ -48,7 +48,7 @@ class SimpleNeuroEvolutionTask(Task):
         self.obj = obj
 
     def get_n_parameters(self):
-        return 4
+        return 5
 
     def get_parameters_bounds(self):
         bounds = [
@@ -74,6 +74,12 @@ class SimpleNeuroEvolutionTask(Task):
         lr = 10 ^ (-int(genotype[4]))
         # lr_lst = [1e-1, 1e-2, 1e-3, 1e-4, 1e-5]
         # lr= lr_lst[genotype[4]-1]
+
+        print ("n_layers: ", n_layers)
+        print("n_filters: ", n_filters)
+        print("kernel_size: ", kernel_size)
+        print("n_mlp: ", n_mlp)
+        print("lr: ", lr)
 
         cnn_class = network_fit(self.train_sample_array, n_layers, n_filters, kernel_size, n_mlp,
                                 self.batch, self.epoch, self.patience, self.val_split,
