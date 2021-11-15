@@ -108,7 +108,7 @@ class network_fit(object):
         #                     self.num_neurons_lst, self.type_lst, self.device)
 
     def trained_model(self):
-        model = one_dcnn(n_layers, n_filters, kernel_size, n_mlp, sample_array, initializer)
+        model = one_dcnn(self.n_layers, self.n_filters, self.kernel_size, self.n_mlp, self.sample_array, initializer)
         return model
 
 
