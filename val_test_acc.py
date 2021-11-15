@@ -311,7 +311,7 @@ def main():
         lr = 10**(-1*int(ind['params_5']))
 
 ###################
-        model = one_dcnn(n_layers, n_filters, kernel_size, n_mlp, train_sample_array, initializer)
+        # model = one_dcnn(n_layers, n_filters, kernel_size, n_mlp, train_sample_array, initializer)
 
         # Calculate model's score
         # archt_score =
@@ -350,7 +350,7 @@ def main():
         train_params.append(num_tran_params)
         train_time.append(training_time)
 
-        archt_scores.append(archt_score)
+        # archt_scores.append(archt_score)
 
 
 
