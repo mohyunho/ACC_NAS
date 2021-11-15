@@ -332,10 +332,10 @@ def main():
         end_itr = time.time()
         training_time = end_itr - start_itr
         num_tran_params = train_params_count(model)
-        flop = get_flops(model)
+        # flop = get_flops(model)
 
         test_rmse.append(rms)
-        flops.append(flop)
+        # flops.append(flop)
         train_params.append(num_tran_params)
         train_time.append(training_time)
 
@@ -344,7 +344,7 @@ def main():
 ########
     # append columns
     mute_log_df['test_rmse'] = test_rmse
-    mute_log_df['flops'] = flops
+    # mute_log_df['flops'] = flops
     mute_log_df['train_params'] = train_params
     mute_log_df['train_time'] = train_time
 
