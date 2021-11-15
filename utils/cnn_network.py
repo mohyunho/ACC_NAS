@@ -128,17 +128,17 @@ class network_fit(object):
                                    name='RMSprop')
 
         model.compile(loss='mean_squared_error', optimizer=amsgrad, metrics='mae')
-        history = model.fit(train_sample_array, train_label_array, epochs=ep, batch_size=bs,
+        history = model.fit(train_sample_array, train_label_array, epochs=self.epoch, batch_size=self.batch,
                             validation_data=(val_sample_array, val_label_array), verbose=2,
-                            callbacks=[EarlyStopping(monitor='val_loss', min_delta=0, patience=pt, verbose=1,
+                            callbacks=[EarlyStopping(monitor='val_loss', min_delta=0, patience=self.patience, verbose=1,
                                                                mode='min'),
-                                       ModelCheckpoint(model_temp_path, monitor='val_loss',
+                                       ModelCheckpoint(self.model_temp_path, monitor='val_loss',
                                                                  save_best_only=True, mode='min', verbose=1)]
                                       )
 
 
 
-        val_pred = elm.predict(val_sample_array)
+        val_pred = model.predict(val_sample_array)
         val_pred = val_pred.flatten()
         rms = sqrt(mean_squared_error(val_pred, val_label_array))
         rms = round(rms, 4)
