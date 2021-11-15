@@ -133,7 +133,7 @@ class network_fit(object):
                             callbacks=[EarlyStopping(monitor='val_loss', min_delta=0, patience=self.patience, verbose=0,
                                                                mode='min'),
                                        ModelCheckpoint(self.model_path, monitor='val_loss',
-                                                                 save_best_only=True, mode='min', verbose=1)]
+                                                                 save_best_only=True, mode='min', verbose=0)]
                                       )
 
 
