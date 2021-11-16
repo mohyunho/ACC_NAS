@@ -290,7 +290,7 @@ def main():
         print("kernel_size: ", kernel_size)
         print("n_mlp: ", n_mlp)
         print("lr: ", lr)
-        
+
 
         model = one_dcnn(n_layers, n_filters, kernel_size, n_mlp, train_sample_array, initializer)
 

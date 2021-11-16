@@ -3,12 +3,25 @@ import tensorflow as tf
 import os
 os.environ['TF_DETERMINISTIC_OPS'] = '1'
 
+np.random.seed(0)
+from tensorflow.keras import backend
+from tensorflow.keras import optimizers
+from tensorflow.keras.models import Sequential, load_model, Model
+from tensorflow.keras.layers import Input, Dense, Flatten, Dropout, Embedding
+from tensorflow.keras.layers import BatchNormalization, Activation, LSTM, TimeDistributed, Bidirectional
+from tensorflow.keras.layers import Conv1D
+from tensorflow.keras.layers import MaxPooling1D
+from tensorflow.keras.layers import concatenate
+from tensorflow.keras.callbacks import EarlyStopping, ModelCheckpoint, LearningRateScheduler
+from tensorflow.python.framework.convert_to_constants import  convert_variables_to_constants_v2_as_graph
+from tensorflow.keras.initializers import GlorotNormal, GlorotUniform
+
 def scorefunc_slogdet(K, labels=None):
     s, ld = np.linalg.slogdet(K)
     return ld
 
 
-def tf_net_kmatrix(model, batch_size):
+def tf_net_kmatrix(model, batch_size, input ):
     kmatrix = np.zeros((batch_size, batch_size))
 
     # forward(batch_inputs)
@@ -16,16 +29,25 @@ def tf_net_kmatrix(model, batch_size):
     for layer in model.layers:
         if "relu" in layer._name:
             print (layer._name)
+            activations_model = Model(model.inputs, outputs=layer._name)
+            print (activations_model.summary())
 
-        # Flatten each relu output
+            # amsgrad = optimizers.Adam(learning_rate=lr, beta_1=0.9, beta_2=0.999, epsilon=1e-07, amsgrad=True,
+            #                           name='Adam')
+            # activations_model.compile(loss='mean_squared_error', optimizer=amsgrad, metrics='mae')
 
-        # Binarize each relu output ( set positive linear values to 1)
+            # activations_1 = activations_model.predict(input)
 
-        # K = x @ x.t()
 
-        # K2 = (1. - x) @ (1. - x.t())
+            # Flatten each relu output
 
-        # kmatrix = kmatrix + K + K2
+            # Binarize each relu output ( set positive linear values to 1)
+
+            # K = x @ x.t()
+
+            # K2 = (1. - x) @ (1. - x.t())
+
+            # kmatrix = kmatrix + K + K2
 
 
     # ############# Original PyTorch ver. #############
