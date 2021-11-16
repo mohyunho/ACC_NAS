@@ -201,6 +201,7 @@ def main():
     seed = 0
     random.seed(seed)
     np.random.seed(seed)
+    tf.random.set_seed(seed)
     os.environ['TF_DETERMINISTIC_OPS'] = '1'
 
     train_units_samples_lst =[]

@@ -3,12 +3,21 @@
 This file contains the implementation of a Task, used to load the data and compute the fitness of an individual
 
 """
-import pandas as pd
-from abc import abstractmethod
 
+import os
+import math
+import pandas as pd
+import numpy as np
+from abc import abstractmethod
+import tensorflow as tf
 # from input_creator import input_gen
 from utils.cnn_network import network_fit
 
+seed = 0
+random.seed(seed)
+np.random.seed(seed)
+tf.random.set_seed(seed)
+os.environ['TF_DETERMINISTIC_OPS'] = '1'
 
 
 def release_list(lst):

@@ -23,7 +23,6 @@ from sklearn.metrics import mean_squared_error
 
 from math import sqrt
 # import keras
-np.random.seed(0)
 
 import tensorflow as tf
 print(tf.__version__)
@@ -42,7 +41,13 @@ from tensorflow.python.framework.convert_to_constants import  convert_variables_
 from tensorflow.keras.initializers import GlorotNormal, GlorotUniform
 
 from utils.dnn import one_dcnn
+seed = 0
+random.seed(seed)
+np.random.seed(seed)
+tf.random.set_seed(seed)
 os.environ['TF_DETERMINISTIC_OPS'] = '1'
+
+
 # Ignore tf err log
 pd.options.mode.chained_assignment = None  # default='warn'
 
