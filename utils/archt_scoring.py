@@ -23,12 +23,11 @@ def scorefunc_slogdet(K, labels=None):
 
 def tf_net_kmatrix(model, batch_size, input ):
     kmatrix = np.zeros((batch_size, batch_size))
-    input_batch = input[:512]
+    input_batch = input[:batch_size]
     # forward(batch_inputs)
     # for each RELU layer in layers of model:
     for layer in model.layers:
         if "relu" in layer._name:
-            print (layer._name)
 
             activations_model = Model(model.inputs, outputs=model.get_layer(layer._name).output)
             # print (activations_model.summary())
@@ -39,33 +38,21 @@ def tf_net_kmatrix(model, batch_size, input ):
 
             # Feedforward
             activation = activations_model.predict(input_batch)
-            print (activation)
-            print (type(activation))
-            print (activation.shape)
+
 
             # Flatten each relu output
             x = activation.reshape((activation.shape[0], -1))
-            print (x)
-            print (x.shape)
+
 
             # Binarize each relu output ( set positive linear values to 1)
             x[x > 0] = 1
-            print (x)
-            print (x.shape)
 
             K = x @ x.T
-            print (type(K))
-            print (K.shape)
-            print (K)
 
             K2 = (1. - x) @ (1. - x.T)
-            print (type(K2))
-            print (K2.shape)
-            print (K2)
 
             kmatrix = kmatrix + K + K2
 
-            print ("kmatrix", kmatrix)
 
 
     # ############# Original PyTorch ver. #############
