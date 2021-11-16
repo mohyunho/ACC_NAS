@@ -53,10 +53,10 @@ class SimpleNeuroEvolutionTask(Task):
     def get_parameters_bounds(self):
         bounds = [
             (1, 10), #n_layers
-            (1, 30), #n_filters
-            (1, 30), #kernel_size
+            (5, 30), #n_filters
+            (5, 30), #kernel_size
             (1, 50), #n_mlp
-            (1, 5),  #lr
+            (3, 6),  #lr
         ]
         return bounds
 

@@ -305,7 +305,9 @@ def main():
         print ("output kmatrix: ", kmatrix)
 
         sign, archt_score = scorefunc_slogdet (kmatrix)
-
+        if int(sign) == 0:
+            archt_score = 0
+            
         print ("sign", sign)
 
         print ("archt_score", archt_score)

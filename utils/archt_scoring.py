@@ -26,7 +26,7 @@ def scorefunc_slogdet(K, labels=None):
     s, ld = tf.linalg.slogdet(K)
     s = s.numpy()
     ld = ld.numpy()
-    return s, ld
+    return s[0], ld[0]
 
 
 def tf_net_kmatrix(model, batch_size, input ):
