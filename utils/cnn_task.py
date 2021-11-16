@@ -9,6 +9,7 @@ import math
 import pandas as pd
 import numpy as np
 from abc import abstractmethod
+import random
 import tensorflow as tf
 # from input_creator import input_gen
 from utils.cnn_network import network_fit
