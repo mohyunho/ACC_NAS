@@ -300,7 +300,7 @@ def main():
 
         # Calculate model's score
 
-        kmatrix = tf_net_kmatrix(model, bs)
+        kmatrix = tf_net_kmatrix(model, bs, train_sample_array)
 
         archt_score = scorefunc_slogdet (kmatrix)
 
