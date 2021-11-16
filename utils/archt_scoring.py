@@ -29,7 +29,7 @@ def tf_net_kmatrix(model, batch_size, input ):
     for layer in model.layers:
         if "relu" in layer._name:
             print (layer._name)
-            activations_model = Model(model.inputs, outputs=layer._name)
+            activations_model = Model(model.inputs, outputs=model.get_layer(layer._name).output)
             print (activations_model.summary())
 
             # amsgrad = optimizers.Adam(learning_rate=lr, beta_1=0.9, beta_2=0.999, epsilon=1e-07, amsgrad=True,
