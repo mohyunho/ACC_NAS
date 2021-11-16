@@ -39,17 +39,27 @@ def tf_net_kmatrix(model, batch_size, input ):
 
             # Feedforward
             activation = activations_model.predict(input_batch)
-
-            # Flatten each relu output
             print (activation)
             print (type(activation))
             print (activation.shape)
 
+            # Flatten each relu output
+            x = activation.reshape((activation.shape[0], -1))
+            print (x)
+            print (x.shape)
+
             # Binarize each relu output ( set positive linear values to 1)
+            x[x > 0] = 1
+            print (x)
+            print (x.shape)
 
-            # K = x @ x.t()
+            K = x @ x.t()
+            print (type(K))
+            print (K.shape)
 
-            # K2 = (1. - x) @ (1. - x.t())
+            K2 = (1. - x) @ (1. - x.t())
+            print (type(K2))
+            print (K2.shape)
 
             # kmatrix = kmatrix + K + K2
 
