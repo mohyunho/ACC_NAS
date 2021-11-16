@@ -23,23 +23,27 @@ def scorefunc_slogdet(K, labels=None):
 
 def tf_net_kmatrix(model, batch_size, input ):
     kmatrix = np.zeros((batch_size, batch_size))
-
+    input_batch = input[:512]
     # forward(batch_inputs)
     # for each RELU layer in layers of model:
     for layer in model.layers:
         if "relu" in layer._name:
             print (layer._name)
+
             activations_model = Model(model.inputs, outputs=model.get_layer(layer._name).output)
-            print (activations_model.summary())
+            # print (activations_model.summary())
 
             # amsgrad = optimizers.Adam(learning_rate=lr, beta_1=0.9, beta_2=0.999, epsilon=1e-07, amsgrad=True,
             #                           name='Adam')
             # activations_model.compile(loss='mean_squared_error', optimizer=amsgrad, metrics='mae')
 
-            # activations_1 = activations_model.predict(input)
-
+            # Feedforward
+            activation = activations_model.predict(input_batch)
 
             # Flatten each relu output
+            print (activation)
+            print (type(activation))
+            print (activation.shape)
 
             # Binarize each relu output ( set positive linear values to 1)
 
