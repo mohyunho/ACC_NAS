@@ -302,7 +302,11 @@ def main():
 
         kmatrix = tf_net_kmatrix(model, bs, train_sample_array)
 
+        print ("output kmatrix: ", kmatrix)
+
         archt_score = scorefunc_slogdet (kmatrix)
+
+        print ("archt_score", archt_score)
 
 
 

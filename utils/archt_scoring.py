@@ -56,12 +56,16 @@ def tf_net_kmatrix(model, batch_size, input ):
             K = x @ x.T
             print (type(K))
             print (K.shape)
+            print (K)
 
             K2 = (1. - x) @ (1. - x.T)
             print (type(K2))
             print (K2.shape)
+            print (K2)
 
-            # kmatrix = kmatrix + K + K2
+            kmatrix = kmatrix + K + K2
+
+            print ("kmatrix", kmatrix)
 
 
     # ############# Original PyTorch ver. #############
