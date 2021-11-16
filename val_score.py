@@ -267,7 +267,9 @@ def main():
 
     # lst
     train_params = []
+    train_time = []
     archt_scores = []
+
 
 
     # Iterows
@@ -283,6 +285,13 @@ def main():
 
 
 ###################
+        print ("n_layers: ", n_layers)
+        print("n_filters: ", n_filters)
+        print("kernel_size: ", kernel_size)
+        print("n_mlp: ", n_mlp)
+        print("lr: ", lr)
+        
+
         model = one_dcnn(n_layers, n_filters, kernel_size, n_mlp, train_sample_array, initializer)
 
         # print("Initializing network...")
@@ -306,7 +315,7 @@ def main():
         training_time = end_itr - start_itr
         num_tran_params = train_params_count(model)
         # flop = get_flops(model)
-
+        print ("Caluclation time: ", training_time)
         # test_rmse.append(rms)
         # flops.append(flop)
         train_params.append(num_tran_params)
