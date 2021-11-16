@@ -48,7 +48,7 @@ class SimpleNeuroEvolutionTask(Task):
         self.obj = obj
 
     def get_n_parameters(self):
-        return 5
+        return 4
 
     def get_parameters_bounds(self):
         bounds = [
@@ -56,7 +56,6 @@ class SimpleNeuroEvolutionTask(Task):
             (5, 30), #n_filters
             (5, 30), #kernel_size
             (1, 50), #n_mlp
-            (3, 5),  #lr
         ]
         return bounds
 
@@ -71,7 +70,7 @@ class SimpleNeuroEvolutionTask(Task):
         n_filters = genotype[1]
         kernel_size = genotype[2]
         n_mlp = 10 * genotype[3]
-        lr = 10**(-1*genotype[4])
+        lr = 10**(-1*4)
         # lr_lst = [1e-1, 1e-2, 1e-3, 1e-4, 1e-5]
         # lr= lr_lst[genotype[4]-1]
 

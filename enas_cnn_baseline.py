@@ -255,7 +255,7 @@ def main():
         }
 
         mutate_log_path = 'EA_log/mute_log_%s_%s_%s_%s.csv' % (pop_size, n_generations, obj, trial)
-        mutate_log_col = ['idx', 'params_1', 'params_2', 'params_3', 'params_4', 'params_5', 'fitness_1',
+        mutate_log_col = ['idx', 'params_1', 'params_2', 'params_3', 'params_4', 'fitness_1',
                           'gen']
         mutate_log_df = pd.DataFrame(columns=mutate_log_col, index=None)
         mutate_log_df.to_csv(mutate_log_path, index=False)
