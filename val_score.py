@@ -304,12 +304,11 @@ def main():
 
         print ("output kmatrix: ", kmatrix)
 
-        archt_score = scorefunc_slogdet (kmatrix)
+        sign, archt_score = scorefunc_slogdet (kmatrix)
+
+        print ("sign", sign)
 
         print ("archt_score", archt_score)
-
-
-
 
 
         ####################################

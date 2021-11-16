@@ -24,8 +24,9 @@ def scorefunc_slogdet(K, labels=None):
     K = np.reshape(K, (1,K.shape[0],K.shape[1]))
     # K = tf.convert_to_tensor(K)
     s, ld = tf.linalg.slogdet(K)
-    # ld = tf.make_ndarray(ld)
-    return ld
+    s = tf.make_ndarray(s)
+    ld = tf.make_ndarray(ld)
+    return s, ld
 
 
 def tf_net_kmatrix(model, batch_size, input ):
