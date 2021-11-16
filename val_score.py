@@ -46,7 +46,7 @@ from tensorflow.python.framework.convert_to_constants import  convert_variables_
 from tensorflow.keras.initializers import GlorotNormal, GlorotUniform
 
 from utils.dnn import one_dcnn
-# from utils.archt_scoring import scorefunc_slogdet, tf_net_kmatrix
+from utils.archt_scoring import scorefunc_slogdet, tf_net_kmatrix
 os.environ['TF_DETERMINISTIC_OPS'] = '1'
 
 
@@ -321,8 +321,8 @@ def main():
     mute_log_df['archt_scores'] = archt_scores
 
     # Save to csv
-    new_file_path = os.path.join(directory_path, 'mute_log_%s_%s_soo_%s_score.csv' %(pop,gen,trial))
-    mute_log_df.to_csv(new_file_path, index=False)
+    # new_file_path = os.path.join(directory_path, 'mute_log_%s_%s_soo_%s_score.csv' %(pop,gen,trial))
+    # mute_log_df.to_csv(new_file_path, index=False)
 
     print ("Score results are saved")
 
