@@ -42,7 +42,7 @@ from tensorflow.python.framework.convert_to_constants import  convert_variables_
 from tensorflow.keras.initializers import GlorotNormal, GlorotUniform
 
 from utils.dnn import one_dcnn
-
+os.environ['TF_DETERMINISTIC_OPS'] = '1'
 # Ignore tf err log
 pd.options.mode.chained_assignment = None  # default='warn'
 

@@ -192,6 +192,7 @@ def main():
     seed = trial
     random.seed(seed)
     np.random.seed(seed)
+    os.environ['TF_DETERMINISTIC_OPS'] = '1'
 
     train_units_samples_lst =[]
     train_units_labels_lst = []
@@ -303,12 +304,12 @@ def main():
 
     # for index, ind in mute_log_df.iterrows():
     for index, ind in tqdm(mute_log_df.iterrows(), total=mute_log_df.shape[0]):
-        print (ind['params_1'], ind['params_2'], ind['params_3'], ind['params_4'], ind['params_5'])
+        print (ind['params_1'], ind['params_2'], ind['params_3'], ind['params_4'])
         n_layers = int(ind['params_1'])
         n_filters = int(ind['params_2'])
         kernel_size = int(ind['params_3'])
         n_mlp = 10 * int(ind['params_4'])
-        lr = 10**(-1*int(ind['params_5']))
+        lr = 10**(-1*4)
 
 ###################
         # model = one_dcnn(n_layers, n_filters, kernel_size, n_mlp, train_sample_array, initializer)

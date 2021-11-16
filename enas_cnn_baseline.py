@@ -183,6 +183,8 @@ def main():
     random.seed(seed)
     np.random.seed(seed)
 
+    os.environ['TF_DETERMINISTIC_OPS'] = '1'
+
     train_units_samples_lst =[]
     train_units_labels_lst = []
 
