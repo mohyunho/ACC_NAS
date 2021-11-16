@@ -361,7 +361,7 @@ def main():
     mute_log_df['train_params'] = train_params
     mute_log_df['train_time'] = train_time
 
-    mute_log_df['archt_scores'] = archt_scores
+    # mute_log_df['archt_scores'] = archt_scores
 
     # Save to csv
     new_file_path = os.path.join(directory_path, 'mute_log_%s_%s_soo_%s_test.csv' %(pop,gen,trial))
