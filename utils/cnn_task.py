@@ -56,7 +56,7 @@ class SimpleNeuroEvolutionTask(Task):
             (5, 30), #n_filters
             (5, 30), #kernel_size
             (1, 50), #n_mlp
-            (3, 6),  #lr
+            (3, 5),  #lr
         ]
         return bounds
 
