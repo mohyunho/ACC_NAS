@@ -53,11 +53,11 @@ def tf_net_kmatrix(model, batch_size, input ):
             print (x)
             print (x.shape)
 
-            K = x @ x.t()
+            K = x @ x.T
             print (type(K))
             print (K.shape)
 
-            K2 = (1. - x) @ (1. - x.t())
+            K2 = (1. - x) @ (1. - x.T)
             print (type(K2))
             print (K2.shape)
 
