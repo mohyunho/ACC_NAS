@@ -307,7 +307,7 @@ def main():
         num_tran_params = train_params_count(model)
         # flop = get_flops(model)
 
-        test_rmse.append(rms)
+        # test_rmse.append(rms)
         # flops.append(flop)
         train_params.append(num_tran_params)
         train_time.append(training_time)
