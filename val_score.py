@@ -164,7 +164,7 @@ def main():
     parser = argparse.ArgumentParser(description='NAS CNN')
     parser.add_argument('-w', type=int, default=50, help='sequence length', required=True)
     parser.add_argument('-s', type=int, default=1, help='stride of filter')
-    parser.add_argument('-bs', type=int, default=1000, help='batch size')
+    parser.add_argument('-bs', type=int, default=512, help='batch size')
     parser.add_argument('-ep', type=int, default=30, help='max epoch')
     parser.add_argument('-pt', type=int, default=20, help='patience')
     parser.add_argument('-vs', type=float, default=0.1, help='validation split')
@@ -291,7 +291,7 @@ def main():
 
         # Calculate model's score
 
-        kmatrix = tf_net_kmatrix(model, batch_size)
+        kmatrix = tf_net_kmatrix(model, bs)
 
         archt_score = scorefunc_slogdet (kmatrix)
 
