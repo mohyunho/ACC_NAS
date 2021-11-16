@@ -16,8 +16,15 @@ from tensorflow.keras.callbacks import EarlyStopping, ModelCheckpoint, LearningR
 from tensorflow.python.framework.convert_to_constants import  convert_variables_to_constants_v2_as_graph
 from tensorflow.keras.initializers import GlorotNormal, GlorotUniform
 
+# def scorefunc_slogdet(K, labels=None):
+#     s, ld = np.linalg.slogdet(K)
+#     return s, ld
+
 def scorefunc_slogdet(K, labels=None):
-    s, ld = np.linalg.slogdet(K)
+    K = np.reshape(K, (1,K.shape[0],K.shape[1]))
+    # K = tf.convert_to_tensor(K)
+    s, ld = tf.linalg.slogdet(K)
+    # ld = tf.make_ndarray(ld)
     return ld
 
 

@@ -96,14 +96,15 @@ def main():
     x_min = 0
     x_max = 40
     x_sp = 5
-    y_min = min(mute_log_df['archt_scores']) - 100
-    y_max = max(mute_log_df['archt_scores']) + 100
+    # y_min = min(mute_log_df['archt_scores']) - 100
+    y_min = 0
+    y_max = 1000
     y_sp = 100
 
     x_range = np.arange(x_min, x_max, 2 * x_sp)
     ax.set_xticks(x_range)
     ax.set_xticklabels(x_range)
-    ax.set_yticks(np.arange(y_min, y_max, 2 * y_sp))
+    ax.set_yticks(np.arange(0, 1000, 2 * y_sp))
     ax.set_xlim(x_min, x_max)
     ax.set_ylim(y_min, y_max)
     # ax.set_title("Solutions and pareto front", fontsize=15)
