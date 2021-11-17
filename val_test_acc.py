@@ -297,14 +297,16 @@ def main():
     flops = []
     train_params = []
     train_time = []
-
+    val_rms_lst =[]
     # archt_scores = []
 
 
     # Iterows
 
+    selected_df = mute_log_df.loc[(mute_log_df['idx'] < 100)]
+
     # for index, ind in mute_log_df.iterrows():
-    for index, ind in tqdm(mute_log_df.iterrows(), total=mute_log_df.shape[0]):
+    for index, ind in tqdm(selected_df.iterrows(), total=selected_df.shape[0]):
         print (ind['params_1'], ind['params_2'], ind['params_3'], ind['params_4'])
         n_layers = int(ind['params_1'])
         n_filters = int(ind['params_2'])
@@ -353,6 +355,7 @@ def main():
         val_rms = round(val_rms, 4)
 
         test_rmse.append(rms)
+        val_rms_lst.append(val_rms)
         # flops.append(flop)
         train_params.append(num_tran_params)
         train_time.append(training_time)
@@ -367,16 +370,17 @@ def main():
 
 ########
     # append columns
-    mute_log_df['test_rmse'] = test_rmse
+    selected_df['test_rmse'] = test_rmse
+    selected_df['val_rmse'] = val_rms_lst
     # mute_log_df['flops'] = flops
-    mute_log_df['train_params'] = train_params
-    mute_log_df['train_time'] = train_time
+    selected_df['train_params'] = train_params
+    selected_df['train_time'] = train_time
 
     # mute_log_df['archt_scores'] = archt_scores
 
     # Save to csv
     new_file_path = os.path.join(directory_path, 'mute_log_%s_%s_soo_%s_test.csv' %(pop,gen,trial))
-    mute_log_df.to_csv(new_file_path, index=False)
+    selected_df.to_csv(new_file_path, index=False)
 
     print ("Test results are saved")
 
