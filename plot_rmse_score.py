@@ -57,6 +57,9 @@ directory_path = os.path.join(current_dir, 'EA_log')
 
 cycol = cycle('bgrcmk')
 
+def roundup(x):
+  return int(math.ceil(x / 100.0)) * 100
+
 def get_cmap(n, name='hsv'):
     '''Returns a function that maps each index in 0, 1, ..., n-1 to a distinct
     RGB color; the keyword argument name must be a standard mpl colormap name.'''
@@ -68,16 +71,18 @@ def main():
     parser.add_argument('-t', type=int, required=True, help='trial')
     parser.add_argument('--pop', type=int, default=50, required=False, help='population size of EA')
     parser.add_argument('--gen', type=int, default=50, required=False, help='generations of evolution')
+    parser.add_argument('--bs', type=int, default=256, required=False, help='generations of evolution')
 
     args = parser.parse_args()
 
     trial = args.t
     pop = args.pop
     gen = args.gen
+    bs = args.bs
 
     # Load csv file
-    # new_file_path = os.path.join(directory_path, 'mute_log_%s_%s_soo_%s_test.csv' %(pop,gen,trial))
-    new_file_path = os.path.join(directory_path, 'mute_log_%s_%s_soo_%s_score.csv' % (pop, gen, trial))
+    new_file_path = os.path.join(directory_path, 'mute_log_%s_%s_soo_%s_score.csv' %(pop,gen,trial))
+    # new_file_path = os.path.join(directory_path, 'mute_log_%s_%s_%s_soo_%s_score.csv' %(pop,gen,bs,trial))
     mute_log_df = pd.read_csv(new_file_path)
 
 ####################################
@@ -93,18 +98,24 @@ def main():
     ax.scatter(mute_log_df['fitness_1'], mute_log_df['archt_scores'], facecolor=(1.0, 1.0, 0.4),
                edgecolors=(0.0, 0.0, 0.0), zorder=1, s=20 )
 
-    x_min = 0
-    x_max = 40
-    x_sp = 5
+    x_min = int(min(mute_log_df['fitness_1'])) - 0.5
+    x_max = int(max(mute_log_df['fitness_1'])) + 0.5
+    x_sp = 0.25
     # y_min = min(mute_log_df['archt_scores']) - 100
-    y_min = 0
-    y_max = 1000
+    sc = mute_log_df['archt_scores'].values
+    # print (sc)
+    # print (type(sc))
+    # print ("np.min(sc[np.nonzero(sc)])", np.min(sc[np.nonzero(sc)]))
+    # y_min = np.min(sc[np.nonzero(sc)]) - 100
+
+    y_min = 400
+    y_max = max(mute_log_df['archt_scores']) + 100
     y_sp = 100
 
     x_range = np.arange(x_min, x_max, 2 * x_sp)
     ax.set_xticks(x_range)
-    ax.set_xticklabels(x_range)
-    ax.set_yticks(np.arange(0, 1000, 2 * y_sp))
+    ax.set_xticklabels(x_range, rotation=60)
+    ax.set_yticks(np.arange(y_min, y_max, 2 * y_sp))
     ax.set_xlim(x_min, x_max)
     ax.set_ylim(y_min, y_max)
     # ax.set_title("Solutions and pareto front", fontsize=15)
@@ -114,9 +125,73 @@ def main():
 
     # Save figure
     # ax.set_rasterized(True)
-    fig.savefig(os.path.join(pic_dir, 'val_score_%s_%s_%s.png' % (pop, gen, trial)), dpi=1500, bbox_inches='tight')
+    fig.savefig(os.path.join(pic_dir, 'val_score_%s_%s_%s_%s.png' % (pop, gen, bs, trial)), dpi=1500, bbox_inches='tight')
     # fig.savefig(os.path.join(pic_dir, 'val_score_%s_%s_%s.eps' % (pop, gen, trial)), dpi=1500, bbox_inches='tight')
     # fig.savefig(os.path.join(pic_dir, 'val_score_%s_%s_%s.pdf' % (pop, gen, trial)), bbox_inches='tight')
+
+
+###############################
+    # Draw scatter plot
+    fig = matplotlib.figure.Figure(figsize=(3, 3))
+    agg.FigureCanvasAgg(fig)
+    cmap = get_cmap(10)
+    ax = fig.add_subplot(1, 1, 1)
+    x_min = int(min(mute_log_df['fitness_1'])) - 0.5
+    x_max = int(max(mute_log_df['fitness_1'])) + 0.5
+    x_sp = 0.25
+    # y_min = min(mute_log_df['archt_scores']) - 100
+    sc = mute_log_df['archt_scores'].values
+    # print (sc)
+    # print (type(sc))
+    # print ("np.min(sc[np.nonzero(sc)])", np.min(sc[np.nonzero(sc)]))
+    # y_min = np.min(sc[np.nonzero(sc)]) - 100
+    y_min = 400
+    y_max = max(mute_log_df['archt_scores']) + 100
+    y_sp = 100
+    x_range = np.arange(x_min, x_max, 2 * x_sp)
+
+    # ax.scatter(mute_log_df['fitness_1'], mute_log_df['test_rmse'], facecolor=(1.0, 1.0, 0.4), edgecolors=(0.0, 0.0, 0.0), zorder=1,
+    #            c=cmap(0), s=20 )
+    # Calculate score avg every 100
+    start_value = roundup(max(mute_log_df['archt_scores']))
+    mean_scores = []
+    mean_vals = []
+    ref_avg = 10
+    interval = 100
+    for n in range(ref_avg):
+        selected_df = mute_log_df.loc[(mute_log_df['archt_scores'] < start_value - n*interval) &
+                        (mute_log_df['archt_scores'] > start_value - (n+1)*interval)]
+        mean_score = np.mean(selected_df['archt_scores'].values)
+        mean_val = np.mean(selected_df['fitness_1'].values)
+        mean_scores.append(mean_score)
+        mean_vals.append(mean_val)
+
+
+    ax.scatter(mean_vals, mean_scores, facecolor=(1.0, 0.4, 0.4),
+               edgecolors=(0.0, 0.0, 0.0), zorder=2, s=30 )
+
+    ax.hlines(np.arange(start_value - ref_avg*interval, start_value, interval), x_min, x_max, colors=(0.1, 0.1, 0.1, 0.1), zorder=2)
+
+    ax.scatter(mute_log_df['fitness_1'], mute_log_df['archt_scores'], facecolor=(1.0, 1.0, 0.4),
+               edgecolors=(0.0, 0.0, 0.0), zorder=1, s=20 )
+
+
+    ax.set_xticks(x_range)
+    ax.set_xticklabels(x_range, rotation=60)
+    ax.set_yticks(np.arange(y_min, y_max, 2 * y_sp))
+    ax.set_xlim(x_min, x_max)
+    ax.set_ylim(y_min, y_max)
+    # ax.set_title("Solutions and pareto front", fontsize=15)
+    ax.set_xlabel('Validation RMSE', fontsize=12)
+    ax.set_ylabel('Architectuer score', fontsize=12)
+    # ax.legend(fontsize=9)
+
+    # Save figure
+    # ax.set_rasterized(True)
+    fig.savefig(os.path.join(pic_dir, 'val_score_%s_%s_%s_%s_avg.png' % (pop, gen, bs, trial)), dpi=1500, bbox_inches='tight')
+    # fig.savefig(os.path.join(pic_dir, 'val_score_%s_%s_%s.eps' % (pop, gen, trial)), dpi=1500, bbox_inches='tight')
+    # fig.savefig(os.path.join(pic_dir, 'val_score_%s_%s_%s.pdf' % (pop, gen, trial)), bbox_inches='tight')
+    print ("mean_vals", mean_vals)
 
 
 ############################à

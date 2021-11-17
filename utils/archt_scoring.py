@@ -1,9 +1,6 @@
 import numpy as np
 import tensorflow as tf
 import os
-os.environ['TF_DETERMINISTIC_OPS'] = '1'
-
-np.random.seed(0)
 from tensorflow.keras import backend
 from tensorflow.keras import optimizers
 from tensorflow.keras.models import Sequential, load_model, Model
@@ -15,6 +12,12 @@ from tensorflow.keras.layers import concatenate
 from tensorflow.keras.callbacks import EarlyStopping, ModelCheckpoint, LearningRateScheduler
 from tensorflow.python.framework.convert_to_constants import  convert_variables_to_constants_v2_as_graph
 from tensorflow.keras.initializers import GlorotNormal, GlorotUniform
+import random
+seed = 0
+random.seed(seed)
+np.random.seed(seed)
+tf.random.set_seed(seed)
+os.environ['TF_DETERMINISTIC_OPS'] = '1'
 
 # def scorefunc_slogdet(K, labels=None):
 #     s, ld = np.linalg.slogdet(K)

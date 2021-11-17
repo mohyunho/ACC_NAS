@@ -337,7 +337,7 @@ def main():
     mute_log_df['archt_scores'] = archt_scores
 
     # Save to csv
-    new_file_path = os.path.join(directory_path, 'mute_log_%s_%s_soo_%s_score.csv' %(pop,gen,trial))
+    new_file_path = os.path.join(directory_path, 'mute_log_%s_%s_%s_soo_%s_score.csv' %(pop,gen,bs,trial))
     mute_log_df.to_csv(new_file_path, index=False)
 
     print ("Score results are saved")
