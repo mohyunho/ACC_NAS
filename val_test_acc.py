@@ -347,6 +347,11 @@ def main():
         num_tran_params = train_params_count(model)
         # flop = get_flops(model)
 
+        val_pred = model.predict(val_sample_array)
+        val_pred = val_pred.flatten()
+        val_rms = sqrt(mean_squared_error(val_pred, val_label_array))
+        val_rms = round(val_rms, 4)
+
         test_rmse.append(rms)
         # flops.append(flop)
         train_params.append(num_tran_params)
@@ -355,6 +360,7 @@ def main():
         # archt_scores.append(archt_score)
 
         print ("ind['fitness_1']: ", ind['fitness_1'])
+        print ("val_rms: ", val_rms)
         print ("rms: ", rms)
 
 
