@@ -354,6 +354,9 @@ def main():
 
         # archt_scores.append(archt_score)
 
+        print ("ind['fitness_1']: ", ind['fitness_1'])
+        print ("rms: ", rms)
+
 
 
 ########

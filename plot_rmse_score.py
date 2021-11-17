@@ -81,22 +81,19 @@ def main():
     bs = args.bs
 
     # Load csv file
-    new_file_path = os.path.join(directory_path, 'mute_log_%s_%s_soo_%s_score.csv' %(pop,gen,trial))
-    # new_file_path = os.path.join(directory_path, 'mute_log_%s_%s_%s_soo_%s_score.csv' %(pop,gen,bs,trial))
+    # new_file_path = os.path.join(directory_path, 'mute_log_%s_%s_soo_%s_score.csv' %(pop,gen,trial))
+    new_file_path = os.path.join(directory_path, 'mute_log_%s_%s_%s_soo_%s_score.csv' %(pop,gen,bs,trial))
     mute_log_df = pd.read_csv(new_file_path)
 
+    y_sp = 300
+    ref_avg = 20
 ####################################
     # Draw scatter plot
     fig = matplotlib.figure.Figure(figsize=(3, 3))
     agg.FigureCanvasAgg(fig)
     cmap = get_cmap(10)
     ax = fig.add_subplot(1, 1, 1)
-
-    # ax.scatter(mute_log_df['fitness_1'], mute_log_df['test_rmse'], facecolor=(1.0, 1.0, 0.4), edgecolors=(0.0, 0.0, 0.0), zorder=1,
-    #            c=cmap(0), s=20 )
-
-    ax.scatter(mute_log_df['fitness_1'], mute_log_df['archt_scores'], facecolor=(1.0, 1.0, 0.4),
-               edgecolors=(0.0, 0.0, 0.0), zorder=1, s=20 )
+    # Draw scatter plot
 
     x_min = int(min(mute_log_df['fitness_1'])) - 0.5
     x_max = int(max(mute_log_df['fitness_1'])) + 0.5
@@ -106,13 +103,23 @@ def main():
     # print (sc)
     # print (type(sc))
     # print ("np.min(sc[np.nonzero(sc)])", np.min(sc[np.nonzero(sc)]))
-    # y_min = np.min(sc[np.nonzero(sc)]) - 100
-
-    y_min = 400
-    y_max = max(mute_log_df['archt_scores']) + 100
-    y_sp = 100
-
+    if np.min(sc[np.nonzero(sc)]) - 100 <= 100:
+        y_min = 100
+    else:
+        y_min = np.min(sc[np.nonzero(sc)]) - 100
+    # y_min = 400
+    y_max = roundup(max(mute_log_df['archt_scores']))
+    # y_sp = 100
+    # y_sp = (y_max - y_min)/20
     x_range = np.arange(x_min, x_max, 2 * x_sp)
+
+    # ax.scatter(mute_log_df['fitness_1'], mute_log_df['test_rmse'], facecolor=(1.0, 1.0, 0.4), edgecolors=(0.0, 0.0, 0.0), zorder=1,
+    #            c=cmap(0), s=20 )
+
+    ax.scatter(mute_log_df['fitness_1'], mute_log_df['archt_scores'], facecolor=(1.0, 1.0, 0.4),
+               edgecolors=(0.0, 0.0, 0.0), zorder=1, s=20 )
+
+
     ax.set_xticks(x_range)
     ax.set_xticklabels(x_range, rotation=60)
     ax.set_yticks(np.arange(y_min, y_max, 2 * y_sp))
@@ -138,16 +145,20 @@ def main():
     ax = fig.add_subplot(1, 1, 1)
     x_min = int(min(mute_log_df['fitness_1'])) - 0.5
     x_max = int(max(mute_log_df['fitness_1'])) + 0.5
-    x_sp = 0.25
+    # x_sp = 0.25
     # y_min = min(mute_log_df['archt_scores']) - 100
     sc = mute_log_df['archt_scores'].values
     # print (sc)
     # print (type(sc))
     # print ("np.min(sc[np.nonzero(sc)])", np.min(sc[np.nonzero(sc)]))
-    # y_min = np.min(sc[np.nonzero(sc)]) - 100
-    y_min = 400
-    y_max = max(mute_log_df['archt_scores']) + 100
-    y_sp = 100
+    if np.min(sc[np.nonzero(sc)]) - 100 <= 100:
+        y_min = 100
+    else:
+        y_min = np.min(sc[np.nonzero(sc)]) - 100
+    # y_min = 400
+    y_max = roundup(max(mute_log_df['archt_scores']))
+    # y_sp = y_sp
+    # y_sp = (y_max - y_min)/20
     x_range = np.arange(x_min, x_max, 2 * x_sp)
 
     # ax.scatter(mute_log_df['fitness_1'], mute_log_df['test_rmse'], facecolor=(1.0, 1.0, 0.4), edgecolors=(0.0, 0.0, 0.0), zorder=1,
@@ -156,8 +167,8 @@ def main():
     start_value = roundup(max(mute_log_df['archt_scores']))
     mean_scores = []
     mean_vals = []
-    ref_avg = 10
-    interval = 100
+    # ref_avg = ref_avg
+    interval = y_sp
     for n in range(ref_avg):
         selected_df = mute_log_df.loc[(mute_log_df['archt_scores'] < start_value - n*interval) &
                         (mute_log_df['archt_scores'] > start_value - (n+1)*interval)]
