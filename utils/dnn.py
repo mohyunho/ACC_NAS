@@ -55,6 +55,34 @@ def one_dcnn(n_layers, n_filters, kernel_size, n_mlp, input_array, initializer):
     cnn.add(Activation("linear"))
     return cnn
 
+def one_dcnn_custom(n_layers, n_filters, kernel_size, n_mlp, input_array, initializer):
+
+    cnn = Sequential(name='one_d_cnn')
+    if n_layers == 1:
+        cnn.add(Conv1D(filters=n_filters, kernel_size=kernel_size, kernel_initializer=initializer, padding='same', input_shape=(input_array.shape[1],input_array.shape[2])))
+        # cnn.add(BatchNormalization())
+        cnn.add(Activation('relu', name="relu_1"))
+
+    else:
+        cnn.add(Conv1D(filters=n_filters, kernel_size=kernel_size, kernel_initializer=initializer, padding='same', input_shape=(input_array.shape[1],input_array.shape[2])))
+        # cnn.add(BatchNormalization())
+        cnn.add(Activation('relu', name="relu_1"))
+        for loop in range(n_layers-1):
+            cnn.add(Conv1D(filters=n_filters, kernel_size=kernel_size, kernel_initializer=initializer, padding='same'))
+            # cnn.add(BatchNormalization())
+            cnn.add(Activation('relu', name="relu_%s" %(loop+2)))
+
+    cnn.add(Conv1D(filters=1, kernel_size=kernel_size, kernel_initializer=initializer, padding='same'))
+    # cnn.add(BatchNormalization())
+    cnn.add(Activation('relu'))
+
+    cnn.add(Flatten())
+    cnn.add(Dense(n_mlp, kernel_initializer=initializer))
+    cnn.add(Activation('relu', name="relu_%s" %(n_layers+1)))
+    cnn.add(Dense(1, kernel_initializer=initializer))
+    cnn.add(Activation("linear"))
+    return cnn
+
 
 # def one_dcnn(n_layers, n_filters, kernel_size, n_mlp, input_array, initializer):
 #
