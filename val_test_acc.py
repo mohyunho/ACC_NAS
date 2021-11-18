@@ -303,7 +303,7 @@ def main():
 
     # Iterows
 
-    selected_df = mute_log_df.loc[(mute_log_df['idx'] < 100)]
+    selected_df = mute_log_df.loc[(mute_log_df['idx'] >=0)&(mute_log_df['idx'] <= 100)]
 
     # for index, ind in mute_log_df.iterrows():
     for index, ind in tqdm(selected_df.iterrows(), total=selected_df.shape[0]):

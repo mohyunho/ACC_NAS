@@ -85,7 +85,7 @@ def main():
     new_file_path = os.path.join(directory_path, 'mute_log_%s_%s_%s_soo_%s_score.csv' %(pop,gen,bs,trial))
     mute_log_df = pd.read_csv(new_file_path)
 
-    y_sp = 300
+    y_sp = 200
     ref_avg = 20
 ####################################
     # Draw scatter plot
