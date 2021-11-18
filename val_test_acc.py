@@ -305,7 +305,8 @@ def main():
 
     # selected_df = mute_log_df.loc[(mute_log_df['idx'] >=0)&(mute_log_df['idx'] <= 100)]
     print (mute_log_df)
-    selected_df = mute_log_df.iloc[0:100,:]
+    # selected_df = mute_log_df.iloc[0:100,:]
+    selected_df = mute_log_df
     print (selected_df)
 
     # for index, ind in mute_log_df.iterrows():
@@ -352,13 +353,13 @@ def main():
         num_tran_params = train_params_count(model)
         # flop = get_flops(model)
 
-        val_pred = model.predict(val_sample_array)
-        val_pred = val_pred.flatten()
-        val_rms = sqrt(mean_squared_error(val_pred, val_label_array))
-        val_rms = round(val_rms, 4)
+        # val_pred = model.predict(val_sample_array)
+        # val_pred = val_pred.flatten()
+        # val_rms = sqrt(mean_squared_error(val_pred, val_label_array))
+        # val_rms = round(val_rms, 4)
 
         test_rmse.append(rms)
-        val_rms_lst.append(val_rms)
+        # val_rms_lst.append(val_rms)
         # flops.append(flop)
         train_params.append(num_tran_params)
         train_time.append(training_time)
@@ -366,7 +367,7 @@ def main():
         # archt_scores.append(archt_score)
 
         print ("ind['fitness_1']: ", ind['fitness_1'])
-        print ("val_rms: ", val_rms)
+        # print ("val_rms: ", val_rms)
         print ("rms: ", rms)
 
 
@@ -374,7 +375,7 @@ def main():
 ########
     # append columns
     selected_df['test_rmse'] = test_rmse
-    selected_df['val_rmse'] = val_rms_lst
+    # selected_df['val_rmse'] = val_rms_lst
     # mute_log_df['flops'] = flops
     selected_df['train_params'] = train_params
     selected_df['train_time'] = train_time
