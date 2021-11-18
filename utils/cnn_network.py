@@ -88,13 +88,23 @@ initializer = GlorotNormal(seed=0)
 # initializer = GlorotUniform(seed=0)
 
 
+# def scheduler(epoch, lr):
+#     if epoch == 10:
+#         return lr * 0.1
+#     elif epoch == 20:
+#         return lr * tf.math.exp(-0.1)
+#     else:
+#         return lr
+
+
 def scheduler(epoch, lr):
-    if epoch == 10:
+    if epoch == 15:
         return lr * 0.1
-    elif epoch == 20:
+    elif epoch == 25:
         return lr * tf.math.exp(-0.1)
     else:
         return lr
+
 
 class network_fit(object):
     '''
