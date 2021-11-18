@@ -88,6 +88,14 @@ initializer = GlorotNormal(seed=0)
 # initializer = GlorotUniform(seed=0)
 
 
+def scheduler(epoch, lr):
+    if epoch == 10:
+        return lr * 0.1
+    elif epoch == 20:
+        return lr * tf.math.exp(-0.1)
+    else:
+        return lr
+
 class network_fit(object):
     '''
     class for network
@@ -133,14 +141,17 @@ class network_fit(object):
         start_itr = time.time()
         keras_rmse = tf.keras.metrics.RootMeanSquaredError()
 
+
         amsgrad = optimizers.Adam(learning_rate=lr, beta_1=0.9, beta_2=0.999, epsilon=1e-07, amsgrad=True, name='Adam')
         rmsop = optimizers.RMSprop(learning_rate=lr, rho=0.9, momentum=0.0, epsilon=1e-07, centered=False,
                                    name='RMSprop')
 
-        model.compile(loss='mean_squared_error', optimizer=amsgrad, metrics=['mae', rmse, keras_rmse ])
+        lr_scheduler = LearningRateScheduler(scheduler)
+
+        model.compile(loss='mean_squared_error', optimizer=amsgrad, metrics=['mae', keras_rmse ])
         history = model.fit(train_sample_array, train_label_array, epochs=self.epoch, batch_size=self.batch,
                             validation_data=(val_sample_array, val_label_array), verbose=2,
-                            callbacks=[EarlyStopping(monitor='val_loss', min_delta=0, patience=self.patience, verbose=0,
+                            callbacks=[lr_scheduler, EarlyStopping(monitor='val_loss', min_delta=0, patience=self.patience, verbose=0,
                                                                mode='min'),
                                        ModelCheckpoint(self.model_path, monitor='val_loss',
                                                                  save_best_only=True, mode='min', verbose=0)]

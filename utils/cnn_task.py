@@ -80,7 +80,7 @@ class SimpleNeuroEvolutionTask(Task):
         n_filters = genotype[1]
         kernel_size = genotype[2]
         n_mlp = 10 * genotype[3]
-        lr = 10**(-1*3)
+        lr = 10**(-1*4)
         # lr_lst = [1e-1, 1e-2, 1e-3, 1e-4, 1e-5]
         # lr= lr_lst[genotype[4]-1]
 
