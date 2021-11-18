@@ -304,6 +304,7 @@ def main():
     # Iterows
 
     # selected_df = mute_log_df.loc[(mute_log_df['idx'] >=0)&(mute_log_df['idx'] <= 100)]
+    print (mute_log_df)
     selected_df = mute_log_df.iloc[0:100,:]
     print (selected_df)
 
