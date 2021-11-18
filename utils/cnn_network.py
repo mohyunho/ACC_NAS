@@ -80,6 +80,10 @@ def get_flops(model):
 #     else:
 #         return lr
 
+def rmse(y_true, y_pred):
+    """Metrics for evaluation"""
+    return backend.sqrt(backend.mean(backend.square(y_pred - y_true), axis=-1))
+
 initializer = GlorotNormal(seed=0)
 # initializer = GlorotUniform(seed=0)
 
@@ -127,14 +131,15 @@ class network_fit(object):
         '''
         print("Initializing network...")
         start_itr = time.time()
+        keras_rmse = tf.keras.metrics.RootMeanSquaredError()
 
         amsgrad = optimizers.Adam(learning_rate=lr, beta_1=0.9, beta_2=0.999, epsilon=1e-07, amsgrad=True, name='Adam')
         rmsop = optimizers.RMSprop(learning_rate=lr, rho=0.9, momentum=0.0, epsilon=1e-07, centered=False,
                                    name='RMSprop')
 
-        model.compile(loss='mean_squared_error', optimizer=amsgrad, metrics='mae')
+        model.compile(loss='mean_squared_error', optimizer=amsgrad, metrics=['mae', rmse, keras_rmse ])
         history = model.fit(train_sample_array, train_label_array, epochs=self.epoch, batch_size=self.batch,
-                            validation_data=(val_sample_array, val_label_array), verbose=0,
+                            validation_data=(val_sample_array, val_label_array), verbose=2,
                             callbacks=[EarlyStopping(monitor='val_loss', min_delta=0, patience=self.patience, verbose=0,
                                                                mode='min'),
                                        ModelCheckpoint(self.model_path, monitor='val_loss',

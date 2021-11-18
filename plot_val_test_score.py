@@ -362,13 +362,14 @@ def main():
     ax = fig.add_subplot(1, 1, 1)
     # Draw scatter plot
 
-    x_min = int(min(mute_log_df['fitness_1'])) - 0.5
-    x_max = int(max(mute_log_df['fitness_1'])) + 0.5
+    x_min = int(min(mute_log_df['test_rmse'])) - 0.5
+    x_max = int(max(mute_log_df['test_rmse'])) + 0.5
     x_sp = 0.25
 
-    y_min = int(min(test_log_df['test_rmse'])) - 0.5
-    y_max = int(max(test_log_df['test_rmse'])) + 0.5
+    y_max =int(max(mute_log_df['fitness_1'])) + 1
+    y_min =int(min(mute_log_df['fitness_1'])) - 1
     y_sp = 0.25
+
 
 
     # y_sp = 100
@@ -378,7 +379,7 @@ def main():
     # ax.scatter(mute_log_df['fitness_1'], mute_log_df['test_rmse'], facecolor=(1.0, 1.0, 0.4), edgecolors=(0.0, 0.0, 0.0), zorder=1,
     #            c=cmap(0), s=20 )
 
-    ax.scatter(mute_log_df['fitness_1'], test_log_df['test_rmse'], facecolor=(1.0, 1.0, 0.4),
+    ax.scatter(mute_log_df['test_rmse'], mute_log_df['fitness_1'], facecolor=(1.0, 1.0, 0.4),
                edgecolors=(0.0, 0.0, 0.0), zorder=1, s=20 )
 
 
@@ -388,8 +389,8 @@ def main():
     ax.set_xlim(x_min, x_max)
     ax.set_ylim(y_min, y_max)
     # ax.set_title("Solutions and pareto front", fontsize=15)
-    ax.set_xlabel('Validation RMSE', fontsize=12)
-    ax.set_ylabel('Test RMSE', fontsize=12)
+    ax.set_xlabel('Test RMSE', fontsize=12)
+    ax.set_ylabel('Validation RMSE', fontsize=12)
     # ax.legend(fontsize=9)
 
     # Save figure
