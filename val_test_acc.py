@@ -94,8 +94,6 @@ def load_array (sample_dir_path, unit_num, win_len, stride):
 
     return loaded['sample'].transpose(2, 0, 1), loaded['label']
 
-def rmse(y_true, y_pred):
-    return backend.sqrt(backend.mean(backend.square(y_pred - y_true), axis=-1))
 
 def train_params_count(model):
     trainableParams = np.sum([np.prod(v.get_shape()) for v in model.trainable_weights])
@@ -149,6 +147,16 @@ units_index_test = [11.0, 14.0, 15.0]
 
 initializer = GlorotNormal(seed=0)
 # initializer = GlorotUniform(seed=0)
+
+
+def scheduler(epoch, lr):
+    if epoch == 15:
+        return lr * 0.1
+    elif epoch == 25:
+        return lr * tf.math.exp(-0.1)
+    else:
+        return lr
+
 
 
 def main():
@@ -328,16 +336,19 @@ def main():
 ###################
         model = one_dcnn(n_layers, n_filters, kernel_size, n_mlp, train_sample_array, initializer)
 
+        keras_rmse = tf.keras.metrics.RootMeanSquaredError()
         # print("Initializing network...")
         start_itr = time.time()
         amsgrad = optimizers.Adam(learning_rate=lr, beta_1=0.9, beta_2=0.999, epsilon=1e-07, amsgrad=True, name='Adam')
         rmsop = optimizers.RMSprop(learning_rate=lr, rho=0.9, momentum=0.0, epsilon=1e-07, centered=False,
                                    name='RMSprop')
 
-        model.compile(loss='mean_squared_error', optimizer=amsgrad, metrics='mae')
+        lr_scheduler = LearningRateScheduler(scheduler)
+
+        model.compile(loss='mean_squared_error', optimizer=amsgrad, metrics=['mae', keras_rmse ])
         history = model.fit(train_sample_array, train_label_array, epochs=ep, batch_size=bs,
                             validation_data=(val_sample_array, val_label_array), verbose=0,
-                            callbacks=[EarlyStopping(monitor='val_loss', min_delta=0, patience=pt, verbose=0,
+                            callbacks=[lr_scheduler, EarlyStopping(monitor='val_loss', min_delta=0, patience=pt, verbose=0,
                                                      mode='min'),
                                        ModelCheckpoint(model_temp_path, monitor='val_loss',
                                                        save_best_only=True, mode='min', verbose=0)]
@@ -353,10 +364,10 @@ def main():
         num_tran_params = train_params_count(model)
         # flop = get_flops(model)
 
-        # val_pred = model.predict(val_sample_array)
-        # val_pred = val_pred.flatten()
-        # val_rms = sqrt(mean_squared_error(val_pred, val_label_array))
-        # val_rms = round(val_rms, 4)
+        val_pred = model.predict(val_sample_array)
+        val_pred = val_pred.flatten()
+        val_rms = sqrt(mean_squared_error(val_pred, val_label_array))
+        val_rms = round(val_rms, 4)
 
         test_rmse.append(rms)
         # val_rms_lst.append(val_rms)
@@ -367,7 +378,7 @@ def main():
         # archt_scores.append(archt_score)
 
         print ("ind['fitness_1']: ", ind['fitness_1'])
-        # print ("val_rms: ", val_rms)
+        print ("val_rms: ", val_rms)
         print ("rms: ", rms)
 
 
