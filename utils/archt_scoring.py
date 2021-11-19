@@ -27,7 +27,7 @@ tf.random.set_seed(seed)
 #     return s, ld
 
 def scorefunc_slogdet(K, labels=None):
-    s, ld = np.linalg.slogdet(K)
+    s, ld = cp.linalg.slogdet(K)
     return s, ld
 
 # def scorefunc_slogdet(K, labels=None):
