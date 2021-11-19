@@ -13,11 +13,14 @@ from tensorflow.keras.callbacks import EarlyStopping, ModelCheckpoint, LearningR
 from tensorflow.python.framework.convert_to_constants import  convert_variables_to_constants_v2_as_graph
 from tensorflow.keras.initializers import GlorotNormal, GlorotUniform
 import random
+
+# os.environ['TF_DETERMINISTIC_OPS'] = '1'
+os.environ['TF_CUDNN_DETERMINISTIC']='1'
 seed = 0
 random.seed(seed)
 np.random.seed(seed)
 tf.random.set_seed(seed)
-# os.environ['TF_DETERMINISTIC_OPS'] = '1'
+
 
 # def scorefunc_slogdet(K, labels=None):
 #     s, ld = np.linalg.slogdet(K)
