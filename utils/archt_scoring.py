@@ -29,7 +29,9 @@ tf.random.set_seed(seed)
 def scorefunc_slogdet(K, labels=None):
     K = np.reshape(K, (1,K.shape[0],K.shape[1]))
     # K = tf.convert_to_tensor(K)
+    print ("chekc1")
     s, ld = tf.linalg.slogdet(K)
+    print("chekc2")
     s = s.numpy()
     ld = ld.numpy()
     return s[0], ld[0]
