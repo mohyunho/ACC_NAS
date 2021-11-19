@@ -13,7 +13,7 @@ from tensorflow.keras.callbacks import EarlyStopping, ModelCheckpoint, LearningR
 from tensorflow.python.framework.convert_to_constants import  convert_variables_to_constants_v2_as_graph
 from tensorflow.keras.initializers import GlorotNormal, GlorotUniform
 import random
-
+import cupy as cp
 # os.environ['TF_DETERMINISTIC_OPS'] = '1'
 os.environ['TF_CUDNN_DETERMINISTIC']='1'
 seed = 0
@@ -27,14 +27,16 @@ tf.random.set_seed(seed)
 #     return s, ld
 
 def scorefunc_slogdet(K, labels=None):
-    K = np.reshape(K, (1,K.shape[0],K.shape[1]))
-    # K = tf.convert_to_tensor(K)
-    print ("chekc1")
-    s, ld = tf.linalg.slogdet(K)
-    print("chekc2")
-    s = s.numpy()
-    ld = ld.numpy()
-    return s[0], ld[0]
+    s, ld = np.linalg.slogdet(K)
+    return s, ld
+
+# def scorefunc_slogdet(K, labels=None):
+#     K = np.reshape(K, (1,K.shape[0],K.shape[1]))
+#     # K = tf.convert_to_tensor(K)
+#     s, ld = tf.linalg.slogdet(K)
+#     s = s.numpy()
+#     ld = ld.numpy()
+#     return s[0], ld[0]
 
 
 def tf_net_kmatrix(model, batch_size, input ):
