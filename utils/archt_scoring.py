@@ -20,7 +20,7 @@ seed = 0
 random.seed(seed)
 np.random.seed(seed)
 tf.random.set_seed(seed)
-
+cp._default_memory_pool.free_all_blocks()
 #
 # def scorefunc_slogdet(K, labels=None):
 #     s, ld = np.linalg.slogdet(K)
@@ -29,6 +29,7 @@ tf.random.set_seed(seed)
 def scorefunc_slogdet(K, labels=None):
     K = cp.array(K)
     s, ld = cp.linalg.slogdet(K)
+    cp._default_memory_pool.free_all_blocks()
     return s, ld
 
 # def scorefunc_slogdet(K, labels=None):
