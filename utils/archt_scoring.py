@@ -19,17 +19,17 @@ np.random.seed(seed)
 tf.random.set_seed(seed)
 os.environ['TF_DETERMINISTIC_OPS'] = '1'
 
-# def scorefunc_slogdet(K, labels=None):
-#     s, ld = np.linalg.slogdet(K)
-#     return s, ld
-
 def scorefunc_slogdet(K, labels=None):
-    K = np.reshape(K, (1,K.shape[0],K.shape[1]))
-    # K = tf.convert_to_tensor(K)
-    s, ld = tf.linalg.slogdet(K)
-    s = s.numpy()
-    ld = ld.numpy()
-    return s[0], ld[0]
+    s, ld = np.linalg.slogdet(K)
+    return s, ld
+
+# def scorefunc_slogdet(K, labels=None):
+#     K = np.reshape(K, (1,K.shape[0],K.shape[1]))
+#     # K = tf.convert_to_tensor(K)
+#     s, ld = tf.linalg.slogdet(K)
+#     s = s.numpy()
+#     ld = ld.numpy()
+#     return s[0], ld[0]
 
 
 def tf_net_kmatrix(model, batch_size, input ):
