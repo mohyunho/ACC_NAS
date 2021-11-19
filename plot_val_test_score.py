@@ -88,7 +88,7 @@ def main():
     test_log_df = pd.read_csv(test_file_path)
 
 
-    y_sp = 200
+    y_sp = 100
     ref_avg = 20
 ####################################
     # Draw scatter plot
