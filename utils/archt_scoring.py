@@ -29,6 +29,7 @@ cp._default_memory_pool.free_all_blocks()
 def scorefunc_slogdet(K, labels=None):
     K = cp.array(K)
     s, ld = cp.linalg.slogdet(K)
+    del K
     cp._default_memory_pool.free_all_blocks()
     return s, ld
 
