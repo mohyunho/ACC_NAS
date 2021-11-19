@@ -22,14 +22,14 @@ np.random.seed(seed)
 tf.random.set_seed(seed)
 
 
-# def scorefunc_slogdet(K, labels=None):
-#     s, ld = np.linalg.slogdet(K)
-#     return s, ld
-
 def scorefunc_slogdet(K, labels=None):
-    K = cp.array(K)
-    s, ld = cp.linalg.slogdet(K)
+    s, ld = np.linalg.slogdet(K)
     return s, ld
+
+# def scorefunc_slogdet(K, labels=None):
+#     K = cp.array(K)
+#     s, ld = cp.linalg.slogdet(K)
+#     return s, ld
 
 # def scorefunc_slogdet(K, labels=None):
 #     K = np.reshape(K, (1,K.shape[0],K.shape[1]))
