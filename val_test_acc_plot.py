@@ -349,7 +349,7 @@ def main():
 
         model.compile(loss='mean_squared_error', optimizer=amsgrad, metrics=['mae', keras_rmse ])
         history = model.fit(train_sample_array, train_label_array, epochs=ep, batch_size=bs,
-                            validation_data=(val_sample_array, val_label_array), verbose=0,
+                            validation_data=(val_sample_array, val_label_array), verbose=2,
                             callbacks=[lr_scheduler, EarlyStopping(monitor='val_loss', min_delta=0, patience=pt, verbose=0,
                                                      mode='min'),
                                        ModelCheckpoint(model_temp_path, monitor='val_loss',
@@ -358,7 +358,7 @@ def main():
     else:
         model.compile(loss='mean_squared_error', optimizer=amsgrad, metrics=['mae', keras_rmse])
         history = model.fit(train_sample_array, train_label_array, epochs=ep, batch_size=bs,
-                            validation_data=(val_sample_array, val_label_array), verbose=0,
+                            validation_data=(val_sample_array, val_label_array), verbose=2,
                             callbacks=[EarlyStopping(monitor='val_loss', min_delta=0, patience=pt, verbose=0,
                                                      mode='min'),
                                        ModelCheckpoint(model_temp_path, monitor='val_loss',
@@ -388,7 +388,6 @@ def main():
 
     # archt_scores.append(archt_score)
 
-    print ("ind['fitness_1']: ", ind['fitness_1'])
     print ("val_rms: ", val_rms)
     print ("rms: ", rms)
 
