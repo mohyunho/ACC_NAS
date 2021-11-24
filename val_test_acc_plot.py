@@ -320,88 +320,88 @@ def main():
     print (selected_df)
 
     # for index, ind in mute_log_df.iterrows():
-    for index, ind in tqdm(selected_df.iterrows(), total=selected_df.shape[0]):
-        print (ind['params_1'], ind['params_2'], ind['params_3'], ind['params_4'])
-        n_layers = 9
-        n_filters = 24
-        kernel_size = 26
-        n_mlp = 10 * 5
-        lr = 10**(-1*4)
+
+
+    n_layers = 9
+    n_filters = 24
+    kernel_size = 26
+    n_mlp = 10 * 5
+    lr = 10**(-1*4)
 ###################
-        # model = one_dcnn(n_layers, n_filters, kernel_size, n_mlp, train_sample_array, initializer)
+    # model = one_dcnn(n_layers, n_filters, kernel_size, n_mlp, train_sample_array, initializer)
 
-        # Calculate model's score
-        # archt_score =
+    # Calculate model's score
+    # archt_score =
 
 
 ###################
-        model = one_dcnn(n_layers, n_filters, kernel_size, n_mlp, train_sample_array, initializer)
+    model = one_dcnn(n_layers, n_filters, kernel_size, n_mlp, train_sample_array, initializer)
 
-        keras_rmse = tf.keras.metrics.RootMeanSquaredError()
-        # print("Initializing network...")
-        start_itr = time.time()
-        amsgrad = optimizers.Adam(learning_rate=lr, beta_1=0.9, beta_2=0.999, epsilon=1e-07, amsgrad=True, name='Adam')
-        rmsop = optimizers.RMSprop(learning_rate=lr, rho=0.9, momentum=0.0, epsilon=1e-07, centered=False,
-                                   name='RMSprop')
+    keras_rmse = tf.keras.metrics.RootMeanSquaredError()
+    # print("Initializing network...")
+    start_itr = time.time()
+    amsgrad = optimizers.Adam(learning_rate=lr, beta_1=0.9, beta_2=0.999, epsilon=1e-07, amsgrad=True, name='Adam')
+    rmsop = optimizers.RMSprop(learning_rate=lr, rho=0.9, momentum=0.0, epsilon=1e-07, centered=False,
+                               name='RMSprop')
 
-        if sch == 1:
-            lr_scheduler = LearningRateScheduler(scheduler)
+    if sch == 1:
+        lr_scheduler = LearningRateScheduler(scheduler)
 
-            model.compile(loss='mean_squared_error', optimizer=amsgrad, metrics=['mae', keras_rmse ])
-            history = model.fit(train_sample_array, train_label_array, epochs=ep, batch_size=bs,
-                                validation_data=(val_sample_array, val_label_array), verbose=0,
-                                callbacks=[lr_scheduler, EarlyStopping(monitor='val_loss', min_delta=0, patience=pt, verbose=0,
-                                                         mode='min'),
-                                           ModelCheckpoint(model_temp_path, monitor='val_loss',
-                                                           save_best_only=True, mode='min', verbose=0)]
-                                )
-        else:
-            model.compile(loss='mean_squared_error', optimizer=amsgrad, metrics=['mae', keras_rmse])
-            history = model.fit(train_sample_array, train_label_array, epochs=ep, batch_size=bs,
-                                validation_data=(val_sample_array, val_label_array), verbose=0,
-                                callbacks=[EarlyStopping(monitor='val_loss', min_delta=0, patience=pt, verbose=0,
-                                                         mode='min'),
-                                           ModelCheckpoint(model_temp_path, monitor='val_loss',
-                                                           save_best_only=True, mode='min', verbose=0)]
-                                )
+        model.compile(loss='mean_squared_error', optimizer=amsgrad, metrics=['mae', keras_rmse ])
+        history = model.fit(train_sample_array, train_label_array, epochs=ep, batch_size=bs,
+                            validation_data=(val_sample_array, val_label_array), verbose=0,
+                            callbacks=[lr_scheduler, EarlyStopping(monitor='val_loss', min_delta=0, patience=pt, verbose=0,
+                                                     mode='min'),
+                                       ModelCheckpoint(model_temp_path, monitor='val_loss',
+                                                       save_best_only=True, mode='min', verbose=0)]
+                            )
+    else:
+        model.compile(loss='mean_squared_error', optimizer=amsgrad, metrics=['mae', keras_rmse])
+        history = model.fit(train_sample_array, train_label_array, epochs=ep, batch_size=bs,
+                            validation_data=(val_sample_array, val_label_array), verbose=0,
+                            callbacks=[EarlyStopping(monitor='val_loss', min_delta=0, patience=pt, verbose=0,
+                                                     mode='min'),
+                                       ModelCheckpoint(model_temp_path, monitor='val_loss',
+                                                       save_best_only=True, mode='min', verbose=0)]
+                            )
 
 
-        test_pred = model.predict(test_sample_array)
-        test_pred = test_pred.flatten()
-        rms = sqrt(mean_squared_error(test_pred, test_label_array))
-        rms = round(rms, 4)
-        end_itr = time.time()
-        training_time = end_itr - start_itr
-        num_tran_params = train_params_count(model)
-        # flop = get_flops(model)
+    test_pred = model.predict(test_sample_array)
+    test_pred = test_pred.flatten()
+    rms = sqrt(mean_squared_error(test_pred, test_label_array))
+    rms = round(rms, 4)
+    end_itr = time.time()
+    training_time = end_itr - start_itr
+    num_tran_params = train_params_count(model)
+    # flop = get_flops(model)
 
-        val_pred = model.predict(val_sample_array)
-        val_pred = val_pred.flatten()
-        val_rms = sqrt(mean_squared_error(val_pred, val_label_array))
-        val_rms = round(val_rms, 4)
+    val_pred = model.predict(val_sample_array)
+    val_pred = val_pred.flatten()
+    val_rms = sqrt(mean_squared_error(val_pred, val_label_array))
+    val_rms = round(val_rms, 4)
 
-        test_rmse.append(rms)
-        # val_rms_lst.append(val_rms)
-        # flops.append(flop)
-        train_params.append(num_tran_params)
-        train_time.append(training_time)
+    test_rmse.append(rms)
+    # val_rms_lst.append(val_rms)
+    # flops.append(flop)
+    train_params.append(num_tran_params)
+    train_time.append(training_time)
 
-        # archt_scores.append(archt_score)
+    # archt_scores.append(archt_score)
 
-        print ("ind['fitness_1']: ", ind['fitness_1'])
-        print ("val_rms: ", val_rms)
-        print ("rms: ", rms)
+    print ("ind['fitness_1']: ", ind['fitness_1'])
+    print ("val_rms: ", val_rms)
+    print ("rms: ", rms)
 
-        fig_acc = plt.figure(figsize=(6, 6))
-        plt.plot(history.history['loss'])
-        plt.plot(history.history['val_keras_rmse'])
-        plt.title('Model loss', fontsize=13)
-        # plt.ylim(0, 1000)
-        plt.ylabel('Loss', fontsize=13)
-        plt.xlabel('Epoch', fontsize=13)
-        plt.legend(['Training loss', 'Validation loss'], loc='upper right', fontsize=13)
-        plt.show()
-        fig_acc.savefig(os.path.join(pic_dir, "training_curve_scheduler_%s.png" %sch))
+    fig_acc = plt.figure(figsize=(6, 6))
+    plt.plot(history.history['loss'])
+    plt.plot(history.history['val_keras_rmse'])
+    plt.title('Model loss', fontsize=13)
+    # plt.ylim(0, 1000)
+    plt.ylabel('Loss', fontsize=13)
+    plt.xlabel('Epoch', fontsize=13)
+    plt.legend(['Training loss', 'Validation loss'], loc='upper right', fontsize=13)
+    plt.show()
+    fig_acc.savefig(os.path.join(pic_dir, "training_curve_scheduler_%s.png" %sch))
 
 
 ########
