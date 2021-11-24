@@ -405,24 +405,22 @@ def main():
 
     # color = 'tab:red'
     ax1.set_xlabel('Epoch', fontsize=13)
-    ax1.set_ylabel('Train Loss', fontsize=13)
-    ax1.plot(history.history['loss'])
+    ax1.set_ylabel('Loss', fontsize=13)
+    lns1 = ax1.plot(history.history['loss'], label='Train Loss')
     ax1.tick_params(axis='y')
     ax1.set_ylim(0, 60)
     ax2 = ax1.twinx()  # instantiate a second axes that shares the same x-axis
     # color = 'tab:blue'
-    ax2.set_ylabel('Validation RMSE')  # we already handled the x-label with ax1
-    ax2.plot(history.history['val_root_mean_squared_error'])
+    ax2.set_ylabel('RMSE')  # we already handled the x-label with ax1
+    lns2 = ax2.plot(history.history['val_root_mean_squared_error'],  label='Validation RMSE', color='r')
     ax2.tick_params(axis='y')
     ax2.set_ylim(0, 20)
 
-    plt.legend(['Training loss', 'Validation RMSE'], loc='upper right', fontsize=13)
+    lns = lns1 + lns2
+    labs = [l.get_label() for l in lns]
+    ax.legend(lns, labs, loc='upper right', fontsize=13)
+
     fig.tight_layout()  # otherwise the right y-label is slightly clipped
-
-
-
-
-
     # plt.show()
     fig.savefig(os.path.join(pic_dir, "training_curve_scheduler_%s.png" %sch))
 
