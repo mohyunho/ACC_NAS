@@ -393,12 +393,12 @@ def main():
 
     fig_acc = plt.figure(figsize=(6, 6))
     plt.plot(history.history['loss'])
-    plt.plot(history.history['val_keras_rmse'])
+    plt.plot(history.history['val_root_mean_squared_error'])
     plt.title('Model loss', fontsize=13)
-    # plt.ylim(0, 1000)
+    plt.ylim(0, 100)
     plt.ylabel('Loss', fontsize=13)
     plt.xlabel('Epoch', fontsize=13)
-    plt.legend(['Training loss', 'Validation loss'], loc='upper right', fontsize=13)
+    plt.legend(['Training loss', 'Validation RMSE'], loc='upper right', fontsize=13)
     plt.show()
     fig_acc.savefig(os.path.join(pic_dir, "training_curve_scheduler_%s.png" %sch))
 
