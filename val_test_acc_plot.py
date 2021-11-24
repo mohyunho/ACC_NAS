@@ -322,10 +322,10 @@ def main():
     # for index, ind in mute_log_df.iterrows():
 
 
-    n_layers = 9
-    n_filters = 24
-    kernel_size = 26
-    n_mlp = 10 * 5
+    n_layers = 10
+    n_filters = 26
+    kernel_size = 13
+    n_mlp = 10 * 31
     lr = 10**(-1*4)
 ###################
     # model = one_dcnn(n_layers, n_filters, kernel_size, n_mlp, train_sample_array, initializer)
