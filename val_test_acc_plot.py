@@ -418,7 +418,7 @@ def main():
 
     lns = lns1 + lns2
     labs = [l.get_label() for l in lns]
-    ax.legend(lns, labs, loc='upper right', fontsize=13)
+    ax1.legend(lns, labs, loc='upper right', fontsize=13)
 
     fig.tight_layout()  # otherwise the right y-label is slightly clipped
     # plt.show()
