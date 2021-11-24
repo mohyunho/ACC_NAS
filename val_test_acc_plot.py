@@ -391,25 +391,44 @@ def main():
     print ("val_rms: ", val_rms)
     print ("rms: ", rms)
 
-    fig_acc = plt.figure(figsize=(6, 6))
-    plt.plot(history.history['loss'])
-    plt.plot(history.history['val_root_mean_squared_error'])
-    plt.title('Model loss', fontsize=13)
-    plt.ylim(0, 100)
-    plt.ylabel('Loss', fontsize=13)
-    plt.xlabel('Epoch', fontsize=13)
+    # fig_acc = plt.figure(figsize=(6, 6))
+
+    fig, ax1 = plt.subplots()
+
+    # plt.plot(history.history['loss'])
+    # plt.plot(history.history['val_root_mean_squared_error'])
+    # plt.title('Model loss', fontsize=13)
+    # plt.ylim(0, 100)
+    # plt.ylabel('Loss', fontsize=13)
+    # plt.xlabel('Epoch', fontsize=13)
+
+
+    # color = 'tab:red'
+    ax1.set_xlabel('Epoch', fontsize=13)
+    ax1.set_ylabel('Train Loss', fontsize=13)
+    ax1.plot(history.history['loss'])
+    ax1.tick_params(axis='y')
+    ax1.set_ylim(0, 60)
+    ax2 = ax1.twinx()  # instantiate a second axes that shares the same x-axis
+    # color = 'tab:blue'
+    ax2.set_ylabel('Validation RMSE')  # we already handled the x-label with ax1
+    ax2.plot(history.history['val_root_mean_squared_error'])
+    ax2.tick_params(axis='y')
+    ax2.set_ylim(0, 20)
+
     plt.legend(['Training loss', 'Validation RMSE'], loc='upper right', fontsize=13)
-    plt.show()
-    fig_acc.savefig(os.path.join(pic_dir, "training_curve_scheduler_%s.png" %sch))
+    fig.tight_layout()  # otherwise the right y-label is slightly clipped
+
+
+
+
+
+    # plt.show()
+    fig.savefig(os.path.join(pic_dir, "training_curve_scheduler_%s.png" %sch))
 
 
 ########
     # append columns
-    selected_df['test_rmse'] = test_rmse
-    # selected_df['val_rmse'] = val_rms_lst
-    # mute_log_df['flops'] = flops
-    selected_df['train_params'] = train_params
-    selected_df['train_time'] = train_time
 
     # mute_log_df['archt_scores'] = archt_scores
 
