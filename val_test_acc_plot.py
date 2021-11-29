@@ -338,6 +338,7 @@ def main():
     model = one_dcnn(n_layers, n_filters, kernel_size, n_mlp, train_sample_array, initializer)
 
     keras_rmse = tf.keras.metrics.RootMeanSquaredError()
+    keras_acc = tf.keras.metrics.Accuracy()
     # print("Initializing network...")
     start_itr = time.time()
     amsgrad = optimizers.Adam(learning_rate=lr, beta_1=0.9, beta_2=0.999, epsilon=1e-07, amsgrad=True, name='Adam')
@@ -347,7 +348,7 @@ def main():
     if sch == 1:
         lr_scheduler = LearningRateScheduler(scheduler)
 
-        model.compile(loss='mean_squared_error', optimizer=amsgrad, metrics=['mae', keras_rmse ])
+        model.compile(loss='mean_squared_error', optimizer=amsgrad, metrics=['mae', keras_rmse, keras_acc ])
         history = model.fit(train_sample_array, train_label_array, epochs=ep, batch_size=bs,
                             validation_data=(val_sample_array, val_label_array), verbose=2,
                             callbacks=[lr_scheduler, EarlyStopping(monitor='val_loss', min_delta=0, patience=pt, verbose=0,
@@ -356,7 +357,7 @@ def main():
                                                        save_best_only=True, mode='min', verbose=0)]
                             )
     else:
-        model.compile(loss='mean_squared_error', optimizer=amsgrad, metrics=['mae', keras_rmse])
+        model.compile(loss='mean_squared_error', optimizer=amsgrad, metrics=['mae', keras_rmse, keras_acc])
         history = model.fit(train_sample_array, train_label_array, epochs=ep, batch_size=bs,
                             validation_data=(val_sample_array, val_label_array), verbose=2,
                             callbacks=[EarlyStopping(monitor='val_loss', min_delta=0, patience=pt, verbose=0,
