@@ -338,7 +338,7 @@ def main():
     model = one_dcnn(n_layers, n_filters, kernel_size, n_mlp, train_sample_array, initializer)
 
     keras_rmse = tf.keras.metrics.RootMeanSquaredError()
-    keras_acc = tf.keras.metrics.Accuracy()
+    keras_acc = keras.metrics.Accuracy()
     # print("Initializing network...")
     start_itr = time.time()
     amsgrad = optimizers.Adam(learning_rate=lr, beta_1=0.9, beta_2=0.999, epsilon=1e-07, amsgrad=True, name='Adam')
