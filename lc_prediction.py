@@ -1,3 +1,6 @@
+'''
+
+'''
 import argparse
 import time
 import json
@@ -29,7 +32,10 @@ np.random.seed(0)
 import tensorflow as tf
 print(tf.__version__)
 # import keras.backend as K
-import tensorflow.keras.backend as K
+# import tensorflow.keras.backend as K
+
+
+
 from tensorflow.keras import backend
 from tensorflow.keras import optimizers
 from tensorflow.keras.models import Sequential, load_model, Model
@@ -59,7 +65,6 @@ pic_dir = os.path.join(current_dir, 'Figures')
 
 # directory_path = current_dir + '/EA_log'
 directory_path = os.path.join(current_dir, 'EA_log')
-
 
 '''
 load array from npz files
@@ -94,6 +99,8 @@ def load_array (sample_dir_path, unit_num, win_len, stride):
 
     return loaded['sample'].transpose(2, 0, 1), loaded['label']
 
+def rmse(y_true, y_pred):
+    return backend.sqrt(backend.mean(backend.square(y_pred - y_true), axis=-1))
 
 def train_params_count(model):
     trainableParams = np.sum([np.prod(v.get_shape()) for v in model.trainable_weights])
@@ -148,23 +155,15 @@ units_index_test = [11.0, 14.0, 15.0]
 initializer = GlorotNormal(seed=0)
 # initializer = GlorotUniform(seed=0)
 
-
-def scheduler(epoch, lr):
-    if epoch == 15:
-        return lr * 0.1
-    elif epoch == 25:
-        return lr * tf.math.exp(-0.1)
-    else:
-        return lr
-
-
+########################################################à
+########################################################
 
 def main():
     # current_dir = os.path.dirname(os.path.abspath(__file__))
     parser = argparse.ArgumentParser(description='NAS CNN')
     parser.add_argument('-w', type=int, default=50, help='sequence length', required=True)
     parser.add_argument('-s', type=int, default=1, help='stride of filter')
-    parser.add_argument('-bs', type=int, default=1000, help='batch size')
+    parser.add_argument('-bs', type=int, default=512, help='batch size')
     parser.add_argument('-ep', type=int, default=30, help='max epoch')
     parser.add_argument('-pt', type=int, default=20, help='patience')
     parser.add_argument('-vs', type=float, default=0.1, help='validation split')
@@ -175,7 +174,6 @@ def main():
     parser.add_argument('--gen', type=int, default=50, required=False, help='generations of evolution')
     parser.add_argument('--device', type=str, default="GPU", help='Use "basic" if GPU with cuda is not available')
     parser.add_argument('--obj', type=str, default="moo", help='Use "soo" for single objective and "moo" for multiobjective')
-    parser.add_argument('--sch', type=int, default=1, help='scheduler')
 
     args = parser.parse_args()
 
@@ -188,7 +186,6 @@ def main():
     pt = args.pt
     vs = args.vs
     sub = args.sub
-    sch = args.sch
 
     device = args.device
     obj = args.obj
@@ -199,7 +196,8 @@ def main():
 
     # random seed predictable
     jobs = 1
-    seed = trial
+    # seed = trial
+    seed = 0
     random.seed(seed)
     np.random.seed(seed)
     tf.random.set_seed(seed)
@@ -260,202 +258,23 @@ def main():
     print ("val_label_array.shape", val_label_array.shape)
 
 
-    sample_array = []
-    label_array = []
-######################################
-### Test
-    test_units_samples_lst =[]
-    test_units_labels_lst = []
-
-    for index in units_index_test:
-        print("Load data index: ", index)
-        sample_array, label_array = load_array (sample_dir_path, index, win_len, win_stride)
-        #sample_array, label_array = shuffle_array(sample_array, label_array)
-        print("sample_array.shape", sample_array.shape)
-        print("label_array.shape", label_array.shape)
-        sample_array = sample_array[::sub]
-        label_array = label_array[::sub]
-
-        sample_array = sample_array.astype(np.float32)
-        label_array = label_array.astype(np.float32)
-
-        print("sub sample_array.shape", sample_array.shape)
-        print("sub label_array.shape", label_array.shape)
-        test_units_samples_lst.append(sample_array)
-        test_units_labels_lst.append(label_array)
-
-    test_sample_array = np.concatenate(test_units_samples_lst)
-    test_label_array = np.concatenate(test_units_labels_lst)
-    print ("samples are aggregated")
-
-    release_list(test_units_samples_lst)
-    release_list(test_units_labels_lst)
-    test_units_samples_lst =[]
-    test_units_labels_lst = []
-    sample_array = []
-    label_array = []
-    print("Memory released")
 
 
 
-##### Load save individuals and generate phenotype
-    log_file = os.path.join(directory_path, 'mute_log_%s_%s_soo_%s.csv' %(pop,gen,trial))
-    mute_log_df = pd.read_csv(log_file)
-
-    # lst
-    test_rmse = []
-    flops = []
-    train_params = []
-    train_time = []
-    val_rms_lst =[]
-    # archt_scores = []
 
 
-    # Iterows
-
-    # selected_df = mute_log_df.loc[(mute_log_df['idx'] >=0)&(mute_log_df['idx'] <= 100)]
-    print (mute_log_df)
-    # selected_df = mute_log_df.iloc[0:100,:]
-    selected_df = mute_log_df
-    print (selected_df)
-
-    # for index, ind in mute_log_df.iterrows():
 
 
-    n_layers = 10
-    n_filters = 26
-    kernel_size = 13
-    n_mlp = 10 * 31
-    lr = 10**(-1*4)
-###################
-    # model = one_dcnn(n_layers, n_filters, kernel_size, n_mlp, train_sample_array, initializer)
-
-    # Calculate model's score
-    # archt_score =
 
 
-###################
-    model = one_dcnn(n_layers, n_filters, kernel_size, n_mlp, train_sample_array, initializer)
-
-    keras_rmse = tf.keras.metrics.RootMeanSquaredError()
-    # print("Initializing network...")
-    start_itr = time.time()
-    amsgrad = optimizers.Adam(learning_rate=lr, beta_1=0.9, beta_2=0.999, epsilon=1e-07, amsgrad=True, name='Adam')
-    rmsop = optimizers.RMSprop(learning_rate=lr, rho=0.9, momentum=0.0, epsilon=1e-07, centered=False,
-                               name='RMSprop')
-
-    if sch == 1:
-        lr_scheduler = LearningRateScheduler(scheduler)
-
-        model.compile(loss='mean_squared_error', optimizer=amsgrad, metrics=['mae', keras_rmse ])
-        history = model.fit(train_sample_array, train_label_array, epochs=ep, batch_size=bs,
-                            validation_data=(val_sample_array, val_label_array), verbose=2,
-                            callbacks=[lr_scheduler, EarlyStopping(monitor='val_loss', min_delta=0, patience=pt, verbose=0,
-                                                     mode='min'),
-                                       ModelCheckpoint(model_temp_path, monitor='val_loss',
-                                                       save_best_only=True, mode='min', verbose=0)]
-                            )
-    else:
-        model.compile(loss='mean_squared_error', optimizer=amsgrad, metrics=['mae', keras_rmse])
-        history = model.fit(train_sample_array, train_label_array, epochs=ep, batch_size=bs,
-                            validation_data=(val_sample_array, val_label_array), verbose=2,
-                            callbacks=[EarlyStopping(monitor='val_loss', min_delta=0, patience=pt, verbose=0,
-                                                     mode='min'),
-                                       ModelCheckpoint(model_temp_path, monitor='val_loss',
-                                                       save_best_only=True, mode='min', verbose=0)]
-                            )
 
 
-    test_pred = model.predict(test_sample_array)
-    test_pred = test_pred.flatten()
-    rms = sqrt(mean_squared_error(test_pred, test_label_array))
-    rms = round(rms, 4)
-    end_itr = time.time()
-    training_time = end_itr - start_itr
-    num_tran_params = train_params_count(model)
-    # flop = get_flops(model)
-
-    val_pred = model.predict(val_sample_array)
-    val_pred = val_pred.flatten()
-    val_rms = sqrt(mean_squared_error(val_pred, val_label_array))
-    val_rms = round(val_rms, 4)
-
-    test_rmse.append(rms)
-    # val_rms_lst.append(val_rms)
-    # flops.append(flop)
-    train_params.append(num_tran_params)
-    train_time.append(training_time)
-
-    # archt_scores.append(archt_score)
-
-    print ("val_rms: ", val_rms)
-    print ("rms: ", rms)
-
-    # fig_acc = plt.figure(figsize=(6, 6))
-
-    fig, ax1 = plt.subplots()
-
-    # plt.plot(history.history['loss'])
-    # plt.plot(history.history['val_root_mean_squared_error'])
-    # plt.title('Model loss', fontsize=13)
-    # plt.ylim(0, 100)
-    # plt.ylabel('Loss', fontsize=13)
-    # plt.xlabel('Epoch', fontsize=13)
 
 
-    # color = 'tab:red'
-    # ax1.set_xlabel('Epoch', fontsize=13)
-    # ax1.set_ylabel('Loss', fontsize=13)
-    # lns1 = ax1.plot(history.history['loss'], label='Train Loss')
-    # ax1.tick_params(axis='y')
-    # ax1.set_ylim(0, 60)
-    # ax2 = ax1.twinx()  # instantiate a second axes that shares the same x-axis
-    # # color = 'tab:blue'
-    # ax2.set_ylabel('RMSE')  # we already handled the x-label with ax1
-    # lns2 = ax2.plot(history.history['val_root_mean_squared_error'],  label='Validation RMSE', color='r')
-    # ax2.tick_params(axis='y')
-    # ax2.set_ylim(0, 20)
-    #
-    # lns = lns1 + lns2
-    # labs = [l.get_label() for l in lns]
-    # ax1.legend(lns, labs, loc='upper right', fontsize=13)
-    #
-    # fig.tight_layout()  # otherwise the right y-label is slightly clipped
-    # # plt.show()
-    # fig.savefig(os.path.join(pic_dir, "training_curve_scheduler_%s.png" %sch))
 
 
-    ax1.set_xlabel('Epoch', fontsize=13)
-    ax1.set_ylabel('Loss', fontsize=13)
-    lns1 = ax1.plot(history.history['loss'], label='Train Loss')
-    ax1.tick_params(axis='y')
-    ax1.set_ylim(0, 60)
-    ax2 = ax1.twinx()  # instantiate a second axes that shares the same x-axis
-    # color = 'tab:blue'
-    ax2.set_ylabel('Accuracy')  # we already handled the x-label with ax1
-    lns2 = ax2.plot(history.history['val_accuracy'],  label='Validation Accuracy', color='r')
-    ax2.tick_params(axis='y')
-    ax2.set_ylim(0, 100)
-
-    lns = lns1 + lns2
-    labs = [l.get_label() for l in lns]
-    ax1.legend(lns, labs, loc='upper right', fontsize=13)
-
-    fig.tight_layout()  # otherwise the right y-label is slightly clipped
-    # plt.show()
-    fig.savefig(os.path.join(pic_dir, "training_acc_curve_scheduler_%s.png" %sch))
 
 
-########
-    # append columns
-
-    # mute_log_df['archt_scores'] = archt_scores
-
-    # Save to csv
-    # new_file_path = os.path.join(directory_path, 'mute_log_%s_%s_soo_%s_test.csv' %(pop,gen,trial))
-    # selected_df.to_csv(new_file_path, index=False)
-
-    print ("Test results are saved")
 
 if __name__ == '__main__':
     main()

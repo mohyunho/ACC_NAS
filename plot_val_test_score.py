@@ -100,6 +100,7 @@ def main():
 
     x_min = int(min(mute_log_df['fitness_1'])) - 0.5
     x_max = int(max(mute_log_df['fitness_1'])) + 0.5
+    x_max = 10
     x_sp = 0.25
     # y_min = min(mute_log_df['archt_scores']) - 100
     sc = mute_log_df['archt_scores'].values
@@ -147,7 +148,8 @@ def main():
     cmap = get_cmap(10)
     ax = fig.add_subplot(1, 1, 1)
     x_min = int(min(mute_log_df['fitness_1'])) - 0.5
-    x_max = int(max(mute_log_df['fitness_1'])) + 0.5
+    # x_max = int(max(mute_log_df['fitness_1'])) + 0.5
+    x_max = 10
     # x_sp = 0.25
     # y_min = min(mute_log_df['archt_scores']) - 100
     sc = mute_log_df['archt_scores'].values
@@ -228,6 +230,7 @@ def main():
 
     x_min = int(min(test_log_df['test_rmse'])) - 0.5
     x_max = int(max(test_log_df['test_rmse'])) + 0.5
+    x_max = 10
     x_sp = 0.25
     # y_min = min(mute_log_df['archt_scores']) - 100
     sc = mute_log_df['archt_scores'].values
@@ -278,6 +281,7 @@ def main():
     ax = fig.add_subplot(1, 1, 1)
     x_min = int(min(mute_log_df['test_rmse'])) - 0.5
     x_max = int(max(mute_log_df['test_rmse'])) + 0.5
+    x_max = 10
     x_sp = 0.25
     # y_min = min(mute_log_df['archt_scores']) - 100
     sc = mute_log_df['archt_scores'].values
@@ -364,6 +368,7 @@ def main():
 
     x_min = int(min(mute_log_df['test_rmse'])) - 0.5
     x_max = int(max(mute_log_df['test_rmse'])) + 0.5
+    x_max = 10
     x_sp = 0.25
 
     y_max =int(max(mute_log_df['fitness_1'])) + 1
@@ -412,6 +417,7 @@ def main():
     ax = fig.add_subplot(1, 1, 1)
     x_min = int(min(mute_log_df['test_rmse'])) - 0.5
     x_max = int(max(mute_log_df['test_rmse'])) + 0.5
+    x_max = 10
     x_sp = 0.25
 
     y_max =int(max(mute_log_df['fitness_1'])) + 1
