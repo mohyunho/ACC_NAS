@@ -169,7 +169,7 @@ def main():
     parser.add_argument('-vs', type=float, default=0.1, help='validation split')
     parser.add_argument('-lr', type=float, default=0.001, help='learning rate')
     parser.add_argument('-sub', type=int, default=1, help='subsampling stride')
-    parser.add_argument('-t', type=int, required=True, help='trial')
+    parser.add_argument('-t', type=int, help='trial')
     parser.add_argument('--pop', type=int, default=50, required=False, help='population size of EA')
     parser.add_argument('--gen', type=int, default=50, required=False, help='generations of evolution')
     parser.add_argument('--device', type=str, default="GPU", help='Use "basic" if GPU with cuda is not available')
