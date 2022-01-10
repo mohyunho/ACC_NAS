@@ -1,4 +1,5 @@
-from scipy.misc import logsumexp
+# from scipy.misc import logsumexp
+from scipy.special import logsumexp
 from functools import partial
 import numpy as np
 import time
