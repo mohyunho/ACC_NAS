@@ -9,6 +9,7 @@ import logging
 # from scipy.misc import logsumexp
 from scipy.special import logsumexp
 from pylrpredictor.curvefunctions import all_models
+from functools import reduce
 
 def recency_weights(num):
     if num == 1:

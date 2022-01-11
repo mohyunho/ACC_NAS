@@ -5,7 +5,7 @@ import argparse
 
 from subprocess import Popen, PIPE
 
-from caffe.proto import caffe_pb2
+# from caffe.proto import caffe_pb2
 
 from pylrpredictor.curvefunctions import  all_models, model_defaults
 from pylrpredictor.terminationcriterion import main
@@ -141,9 +141,9 @@ class Terminationcriterion(unittest.TestCase):
                 y_final = y_noisy[-1]
                 num_train = 200
                 np.savetxt("learning_curve.txt", y_noisy[:200])
-                write_xlim(xlim)
+                # write_xlim(xlim)
 
-                print "Actual ybest: %f" % y_noisy[-1]
+                print ("Actual ybest: %f" % y_noisy[-1])
 
                 #we set ybest to be higher than the final value of this curve
                 #hence we DO want the evaluation to stop!
@@ -158,7 +158,7 @@ class Terminationcriterion(unittest.TestCase):
                 self.assertTrue(os.path.exists("y_predict.txt"))
                 y_predict = float(open("y_predict.txt").read())
                 abserr = np.abs(y_predict - y_noisy[-1])
-                print "abs error %f" % abserr
+                print ("abs error %f" % abserr)
                 self.assertTrue(abserr < 0.03)
 
                 #we set ybest to be lower than the final value of this curve
@@ -185,7 +185,7 @@ class Terminationcriterion(unittest.TestCase):
         """
         for prob_x_greater_type in ["posterior_mean_prob_x_greater_than", "posterior_prob_x_greater_than"]:
             np.savetxt("learning_curve.txt", real_abort_learning_curve)
-            write_xlim(real_abort_xlim)
+            # write_xlim(real_abort_xlim)
 
             open("ybest.txt", "w").write(str(real_abort_ybest))
             open("termination_criterion_running", "w").write("running")
@@ -217,9 +217,9 @@ class Terminationcriterion(unittest.TestCase):
                 y_final = y_noisy[-1]
                 num_train = 200
                 np.savetxt("learning_curve.txt", y_noisy[:200])
-                write_xlim(xlim)
+                # write_xlim(xlim)
 
-                print "Actual ybest: %f" % y_noisy[-1]
+                print ("Actual ybest: %f" % y_noisy[-1])
 
                 #we set ybest to be higher than the final value of this curve
                 #hence we DO want the evaluation to stop!
@@ -262,7 +262,7 @@ class Terminationcriterion(unittest.TestCase):
         """
         for prob_x_greater_type in ["posterior_mean_prob_x_greater_than", "posterior_prob_x_greater_than"]:
             np.savetxt("learning_curve.txt", real_abort_learning_curve)
-            write_xlim(real_abort_xlim)
+            # write_xlim(real_abort_xlim)
 
             open("ybest.txt", "w").write(str(real_abort_ybest))
             open("termination_criterion_running", "w").write("running")
@@ -293,7 +293,7 @@ class Terminationcriterion(unittest.TestCase):
         """
         for prob_x_greater_type in ["posterior_mean_prob_x_greater_than", "posterior_prob_x_greater_than"]:
             np.savetxt("learning_curve.txt", real_abort_learning_curve)
-            write_xlim(real_abort_xlim)
+            # write_xlim(real_abort_xlim)
 
             open("ybest.txt", "w").write(str(real_abort_ybest))
             open("termination_criterion_running", "w").write("running")
@@ -345,7 +345,7 @@ class Terminationcriterion(unittest.TestCase):
             y_final = y_noisy[-1]
             num_train = 30
             np.savetxt("learning_curve.txt", y_noisy[:num_train])
-            write_xlim(xlim)
+            # write_xlim(xlim)
 
             #first check:
             #if there's no ybest and the predictive_std is high
@@ -358,7 +358,7 @@ class Terminationcriterion(unittest.TestCase):
                 nthreads=4)
             self.assertEqual(ret, 0)
 
-            print "Actual ybest: %f" % y_noisy[-1]
+            print ("Actual ybest: %f" % y_noisy[-1])
 
             #we set ybest to be higher than the final value of this curve
             #BUT because the predictive std is still high we don't want to stop
@@ -402,7 +402,7 @@ class Terminationcriterion(unittest.TestCase):
             y_final = y_noisy[-1]
             num_train = 30
             np.savetxt("learning_curve.txt", y_noisy[:num_train])
-            write_xlim(xlim)
+            # write_xlim(xlim)
 
             #first check:
             #if there's no ybest and the predictive_std is high
@@ -414,7 +414,7 @@ class Terminationcriterion(unittest.TestCase):
                 nthreads=4)
             self.assertEqual(ret, 0)
 
-            print "Actual ybest: %f" % y_noisy[-1]
+            print ("Actual ybest: %f" % y_noisy[-1])
 
             #we set ybest to be higher than the final value of this curve
             #hence we DO want the evaluation to stop!
@@ -430,7 +430,7 @@ class Terminationcriterion(unittest.TestCase):
             y_predict = float(open("y_predict.txt").read())
             abserr = np.abs(y_predict-y_noisy[-1])
             self.assertTrue(abserr < 0.05)
-            print "abs error %f" % abserr
+            print ("abs error %f" % abserr)
 
             #we set ybest to be lower than the final value of this curve
             #hence we DON'T want the evaluation to stop!
@@ -461,7 +461,7 @@ class Terminationcriterion(unittest.TestCase):
             y_predict = float(open("y_predict.txt").read())
             abserr = np.abs(y_predict-y_noisy[-1])
             self.assertTrue(abserr < 0.05)
-            print "abs error %f" % abserr
+            print ("abs error %f" % abserr)
 
             self.assertFalse(os.path.exists("termination_criterion_running"))
             self.assertFalse(os.path.exists("termination_criterion_running_pid"))

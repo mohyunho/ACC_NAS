@@ -168,6 +168,28 @@ class network_fit(object):
                                       )
 
 
+        # val_loss_history = history.history['val_loss']
+        # print ("val_loss_history", val_loss_history)
+        # val_loss_history = np.asarray(val_loss_history)
+        # val_loss_history = val_loss_history.round(4)
+
+
+        # with open('val_loss_hist.csv','a') as fd:
+        #     fd.write(val_loss_history)       
+
+
+        val_loss_history = history.history['val_loss']
+        print ("val_loss_history", val_loss_history)
+        # val_loss_history = np.asarray(val_loss_history)
+        # val_loss_history = val_loss_history.round(4)
+
+
+        import csv   
+        with open('val_loss_hist.csv', 'a') as f:
+            writer = csv.writer(f)
+            writer.writerow(val_loss_history)    
+
+
 
         val_pred = model.predict(val_sample_array)
         val_pred = val_pred.flatten()
