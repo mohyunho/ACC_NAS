@@ -168,20 +168,13 @@ class network_fit(object):
                                       )
 
 
-        # val_loss_history = history.history['val_loss']
-        # print ("val_loss_history", val_loss_history)
-        # val_loss_history = np.asarray(val_loss_history)
-        # val_loss_history = val_loss_history.round(4)
-
-
-        # with open('val_loss_hist.csv','a') as fd:
-        #     fd.write(val_loss_history)       
+   
 
 
         val_loss_history = history.history['val_loss']
-        print ("val_loss_history", val_loss_history)
-        # val_loss_history = np.asarray(val_loss_history)
-        # val_loss_history = val_loss_history.round(4)
+        # print ("val_loss_history", val_loss_history)
+        val_loss_history = [round(num, 4) for num in val_loss_history]
+
 
 
         import csv   
