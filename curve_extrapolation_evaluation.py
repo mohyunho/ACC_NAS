@@ -1,10 +1,30 @@
+
+import argparse
+import time
+import json
+import logging
+import glob
+import math
 import os, sys
-import matplotlib.pyplot as plt
-from matplotlib.pyplot import cm
 import matplotlib.figure
 import numpy as np
 import pandas as pd
 import cvxpy as cp
+
+import sklearn as sk
+from sklearn import svm
+from sklearn.utils import shuffle
+from sklearn import metrics
+from sklearn import preprocessing
+from sklearn import pipeline
+from sklearn.metrics import mean_squared_error
+from math import sqrt
+
+import matplotlib.pyplot as plt
+from matplotlib.pyplot import cm
+import matplotlib.figure
+import matplotlib.backends.backend_agg as agg
+import matplotlib.backends.backend_svg as svg
 
 from scipy.optimize import curve_fit
 from utils.curve_functions import *
@@ -54,12 +74,15 @@ def main():
     val_rmse_df = pd.read_csv(val_rmse_filepath)
     train_time_df = pd.read_csv(train_time_filepath)
 
-    val_rmse_ob = []
-    val_rmse_ex = []
+    val_rmse_observation = []
+    val_rmse_mid = []
+    val_rmse_prediction = []
 
 
     for arch_idx, val_rmse_hist in val_rmse_df.iterrows():
+        print ("arch_idx", arch_idx)
         y_all = val_rmse_hist
+        print ("y_all", y_all)
         x_max = np.arange(1,31)
         print ("x_max", x_max)
         x_observation = x_max[:ob_ep]
@@ -78,13 +101,13 @@ def main():
             print ("value", value)
             next_x = np.arange(ob_ep+1,31)
             if key == "loglog_linear":
-                fitting_parameters, covariance = curve_fit(value, x_observation, y_obesrvation, p0=[10,1,10], maxfev=50000)
+                fitting_parameters, covariance = curve_fit(value, x_observation, y_obesrvation, p0=[10,1,10], maxfev=5000000)
             elif key == "pow3":
-                fitting_parameters, covariance = curve_fit(value, x_observation, y_obesrvation, maxfev=50000)
+                fitting_parameters, covariance = curve_fit(value, x_observation, y_obesrvation, maxfev=5000000)
             elif key == "ilog2":
-                fitting_parameters, covariance = curve_fit(value, x_observation, y_obesrvation, maxfev=50000)
+                fitting_parameters, covariance = curve_fit(value, x_observation, y_obesrvation, maxfev=5000000)
             else:
-                fitting_parameters, covariance = curve_fit(value, x_observation, y_obesrvation, maxfev=50000)
+                fitting_parameters, covariance = curve_fit(value, x_observation, y_obesrvation, maxfev=5000000)
             
             if len(fitting_parameters)==2:
                 y_func = value(x_observation, fitting_parameters[0], fitting_parameters[1])
@@ -107,6 +130,8 @@ def main():
             # ax.plot(next_x, next_y, color=c, marker='o', label=key)
             ax.plot(x_max, np.append(y_func, next_y), color=c, marker='o', linestyle='dashed', label=key, zorder=1)
 
+        # ax.legend(loc='upper right', fontsize=12)
+        # fig.savefig(os.path.join(pic_dir, 'curve_archt%s_epoch_%s.png' %(arch_idx, ob_ep)), bbox_inches='tight')
 
         # list of 1d arrays to 2d array
         print ("y_func_lst", y_func_lst)
@@ -116,11 +141,20 @@ def main():
         # https://www.cvxpy.org/examples/basic/least_squares.html
         # m: length of vector, n: numb of curves
         # Shape of A:(m, n), length of b: (m)
+        np.random.seed(0)
+        import cvxpy as cp
         n = len(all_models)
+        print ("n", n)
         coeff = cp.Variable(n)
+        print ("coeff",coeff)
         cost = cp.sum_squares(input_arrays @ coeff - y_obesrvation)
-        prob = cp.Problem(cp.Minimize(cost))
-        prob.solve()
+        print ("cost", cost)
+
+        # constraints = [input_arrays @ coeff >= y_obesrvation, coeff >= 0]
+        constraints = [coeff >= 0]
+
+        prob = cp.Problem(cp.Minimize(cost), constraints)
+        prob.solve(verbose=True)
 
         print("The optimal coeff is")
         print(coeff.value)
@@ -147,27 +181,133 @@ def main():
         fig.savefig(os.path.join(pic_dir, 'curve_archt%s_epoch_%s.png' %(arch_idx, ob_ep)), bbox_inches='tight')
 
         val_rmse_observation.append(y_all[-1])
+        val_rmse_mid.append(y_all[ob_ep-1])
         val_rmse_prediction.append(combined_y[-1])
 
 
     # save to csv file
     rank_df = pd.DataFrame()
     rank_df["val_rmse_observation"] = np.asarray(val_rmse_observation)
-    rank_df["rank_observation"] = np.argsort(-1*np.asarray(val_rmse_observation))[::-1]
+    temp = np.argsort(-1*np.asarray(val_rmse_observation))[::-1]
+    ranks = np.empty_like(temp)
+    ranks[temp] = np.arange(len(val_rmse_observation))
+    rank_df["rank_observation"] = ranks
+
     rank_df["val_rmse_prediction"] = np.asarray(val_rmse_prediction)
-    rank_df["rank_prediction"] = np.argsort(-1*np.asarray(val_rmse_prediction))[::-1]
+    temp = np.argsort(-1*np.asarray(val_rmse_prediction))[::-1]
+    ranks = np.empty_like(temp)
+    ranks[temp] = np.arange(len(val_rmse_prediction))
+    rank_df["rank_prediction"] = ranks
+
+    rank_df["val_rmse_mid"] = np.asarray(val_rmse_mid)
+    temp = np.argsort(-1*np.asarray(val_rmse_mid))[::-1]
+    ranks = np.empty_like(temp)
+    ranks[temp] = np.arange(len(val_rmse_mid))
+    rank_df["rank_mid"] = ranks
+
+
     rank_df.to_csv(os.path.join(current_dir, 'rank_val_rmse_0_50_%s.csv' %ob_ep))
+
+    # Top 5 RMSE
+    top_k = 10
+    rank_df = rank_df.sort_values(by='rank_observation', ascending=True)
+    topk_observation = rank_df["val_rmse_observation"][:top_k]
+    topk_prediction = rank_df["val_rmse_prediction"][:top_k]
+    rms = sqrt(mean_squared_error(topk_observation, topk_prediction))
+    rms = round(rms, 4)
+    print ("Topk_obs_pred_rmse", rms)
+
+    rank_df = rank_df.sort_values(by='rank_observation', ascending=True)
+    topk_observation = rank_df["val_rmse_observation"][:top_k]
+    topk_mid = rank_df["val_rmse_mid"][:top_k]
+    rms = sqrt(mean_squared_error(topk_observation, topk_mid))
+    rms = round(rms, 4)
+    print ("Topk_obs_mid_rmse", rms)
+
 
 
     # box plot
     fig = matplotlib.figure.Figure(figsize=(8, 6))
     # agg.FigureCanvasAgg(fig)
     ax = fig.add_subplot(1, 1, 1)
-    box_plot_data=[val_rmse_observation,val_rmse_prediction]
+    box_plot_data=[val_rmse_observation,val_rmse_prediction, val_rmse_mid]
     ax.boxplot(box_plot_data)
+    ax.set_ylabel('Validation RMSE', fontsize=15)
+    ax.set_yticks(np.arange(6,11.5,0.5))
+    ax.set_xticklabels(["observation", "prediction", "at epoch %s" %ob_ep], fontsize=15)
     fig.savefig(os.path.join(pic_dir, 'boxplot_0_50_epoch_%s.png' %ob_ep), bbox_inches='tight')
 
 
+    ####################################
+    # Draw scatter plot
+    fig = matplotlib.figure.Figure(figsize=(3, 3))
+    agg.FigureCanvasAgg(fig)
+    # cmap = get_cmap(10)
+    ax = fig.add_subplot(1, 1, 1)
+    # Draw scatter plot
+
+    # x_min = int(min(rank_df["val_rmse_observation"])) - 0.5
+    # x_max = int(max(rank_df["val_rmse_observation"])) + 0.5
+
+    ax.scatter(rank_df["val_rmse_observation"], rank_df["val_rmse_prediction"], facecolor=(1.0, 1.0, 0.4),
+               edgecolors=(0.0, 0.0, 0.0), zorder=1, s=20 )
+
+    rmse_range = np.arange(6,11.5,0.5)
+    # y_range = np.arange(int(min(rank_df["val_rmse_prediction"])), int(max(rank_df["val_rmse_prediction"])) + 0.5 ,0.5)
+    y_range = np.arange(7, 10.5 ,0.5)
+    ax.set_xticks(rmse_range)
+    ax.set_xticklabels(rmse_range, rotation=60)
+    ax.set_yticks(y_range)
+    # ax.set_yticklabels(rmse_range)
+    # ax.set_xlim(x_min, x_max)
+    ax.set_ylim(6, 10)
+    # ax.set_title("Solutions and pareto front", fontsize=15)
+    ax.set_xlabel('Val. RMSE Observation', fontsize=12)
+    ax.set_ylabel('Val. RMSE Prediction', fontsize=12)
+    # ax.legend(fontsize=9)
+
+    # Save figure
+    # ax.set_rasterized(True)
+    fig.savefig(os.path.join(pic_dir, 'val_extpl_obs_pred_epoch_%s.png' %ob_ep), dpi=1500, bbox_inches='tight')
+    # fig.savefig(os.path.join(pic_dir, 'val_score_%s_%s_%s.eps' % (pop, gen, trial)), dpi=1500, bbox_inches='tight')
+    # fig.savefig(os.path.join(pic_dir, 'val_score_%s_%s_%s.pdf' % (pop, gen, trial)), bbox_inches='tight')
+
+
+
+
+##########################
+        ####################################
+    # Draw scatter plot
+    fig = matplotlib.figure.Figure(figsize=(3, 3))
+    agg.FigureCanvasAgg(fig)
+    # cmap = get_cmap(10)
+    ax = fig.add_subplot(1, 1, 1)
+    # Draw scatter plot
+
+    # x_min = int(min(rank_df["val_rmse_observation"])) - 0.5
+    # x_max = int(max(rank_df["val_rmse_observation"])) + 0.5
+
+    ax.scatter(rank_df["val_rmse_observation"], rank_df["val_rmse_mid"], facecolor=(1.0, 1.0, 0.4),
+               edgecolors=(0.0, 0.0, 0.0), zorder=1, s=20 )
+
+    rmse_range = np.arange(6,11.5,0.5)
+    y_range = np.arange(int(min(rank_df["val_rmse_mid"])), int(max(rank_df["val_rmse_mid"])) + 0.5 ,0.5)
+    ax.set_xticks(rmse_range)
+    ax.set_xticklabels(rmse_range, rotation=60)
+    ax.set_yticks(y_range)
+    # ax.set_yticklabels(rmse_range)
+    # ax.set_xlim(x_min, x_max)
+    # ax.set_ylim(y_min, y_max)
+    # ax.set_title("Solutions and pareto front", fontsize=15)
+    ax.set_xlabel('Val. RMSE Observation', fontsize=12)
+    ax.set_ylabel('Val. RMSE Epoch %s' %ob_ep, fontsize=12)
+    # ax.legend(fontsize=9)
+
+    # Save figure
+    # ax.set_rasterized(True)
+    fig.savefig(os.path.join(pic_dir, 'val_extpl_obs_mid_epoch_%s.png' %ob_ep), dpi=1500, bbox_inches='tight')
+    # fig.savefig(os.path.join(pic_dir, 'val_score_%s_%s_%s.eps' % (pop, gen, trial)), dpi=1500, bbox_inches='tight')
+    # fig.savefig(os.path.join(pic_dir, 'val_score_%s_%s_%s.pdf' % (pop, gen, trial)), bbox_inches='tight')
 
 
     # bar graphs for comparison
