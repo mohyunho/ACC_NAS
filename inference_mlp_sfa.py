@@ -25,8 +25,6 @@ import random
 from random import shuffle
 from tqdm.keras import TqdmCallback
 
-
-
 import importlib
 from scipy.stats import randint, expon, uniform
 import sklearn as sk
@@ -56,29 +54,21 @@ from tensorflow.keras.layers import MaxPooling1D
 from tensorflow.keras.layers import concatenate
 from tensorflow.keras.callbacks import EarlyStopping, ModelCheckpoint, LearningRateScheduler
 
-
 from tensorflow.python.framework.convert_to_constants import  convert_variables_to_constants_v2_as_graph
 
-from tensorflow.keras.initializers import GlorotNormal, GlorotUniform
-
-initializer = GlorotNormal(seed=0)
-# initializer = GlorotUniform(seed=0)
 
 from utils.data_preparation_unit import df_all_creator, df_train_creator, df_test_creator, Input_Gen
-from utils.dnn import one_dcnn, one_dcnn_baseline, one_dcnn_cmapss
+from utils.dnn import one_dcnn, mlps, mlps_cmapss
 
-
-seed = 0
-
-random.seed(seed)
-np.random.seed(seed)
-tf.random.set_seed(seed)
-os.environ['TF_DETERMINISTIC_OPS'] = '1'
 
 
 # import tensorflow.compat.v1 as tf
 # tf.disable_v2_behavior()
-
+seed = 0
+random.seed(seed)
+np.random.seed(seed)
+tf.random.set_seed(seed)
+os.environ['TF_DETERMINISTIC_OPS'] = '1'
 # Ignore tf err log
 pd.options.mode.chained_assignment = None  # default='warn'
 
@@ -105,7 +95,7 @@ data_filedir = os.path.join(current_dir, 'N-CMAPSS')
 data_filepath = os.path.join(current_dir, 'N-CMAPSS', 'N-CMAPSS_DS02-006.h5')
 sample_dir_path = os.path.join(data_filedir, 'Samples_whole')
 
-model_temp_path = os.path.join(current_dir, 'Models', 'oned_cnn_rep.h5')
+model_temp_path = os.path.join(current_dir, 'Models', 'oned_fnn_rep.h5')
 tf_temp_path = os.path.join(current_dir, 'TF_Model_tf')
 
 pic_dir = os.path.join(current_dir, 'Figures')
@@ -118,6 +108,28 @@ def load_part_array (sample_dir_path, unit_num, win_len, stride, part_num):
     filepath =  os.path.join(sample_dir_path, filename)
     loaded = np.load(filepath)
     return loaded['sample'], loaded['label']
+
+
+def load_array_sfa_train ():
+    filename_sample =  'NC_smp10_5050_SFA5_train_samples.npy' 
+    filename_label =  'NC_smp10_5050_SFA5_train_label.npy' 
+    filepath_sample =  os.path.join(sample_dir_path, filename_sample)
+    filepath_label =  os.path.join(sample_dir_path, filename_label)
+    loaded_sample = np.load(filepath_sample)
+    loaded_label = np.load(filepath_label)
+    return loaded_sample, loaded_label
+
+def load_array_sfa_test ():
+    filename_sample =  'NC_smp10_5050_SFA5_test_samples.npy' 
+    filename_label =  'NC_smp10_5050_SFA5_test_label.npy' 
+    filepath_sample =  os.path.join(sample_dir_path, filename_sample)
+    filepath_label =  os.path.join(sample_dir_path, filename_label)
+    loaded_sample = np.load(filepath_sample)
+    loaded_label = np.load(filepath_label)
+    return loaded_sample, loaded_label   
+
+
+
 
 def load_part_array_merge (sample_dir_path, unit_num, win_len, win_stride, partition):
     sample_array_lst = []
@@ -143,13 +155,15 @@ def load_part_array_merge (sample_dir_path, unit_num, win_len, win_stride, parti
 
 #     return loaded['sample'].transpose(2, 0, 1), loaded['label']
 
-
 def load_array (sample_dir_path, unit_num, win_len, stride, sampling):
     filename =  'Unit%s_win%s_str%s_smp%s.npz' %(str(int(unit_num)), win_len, stride, sampling)
     filepath =  os.path.join(sample_dir_path, filename)
     loaded = np.load(filepath)
 
     return loaded['sample'].transpose(2, 0, 1), loaded['label']
+
+
+
 
 
 def rmse(y_true, y_pred):
@@ -168,7 +182,7 @@ def shuffle_array(sample_array, label_array):
     shuffle_label = label_array[ind_list,]
     return shuffle_sample, shuffle_label
 
-def figsave(history, win_len, win_stride, bs, lr, sub):
+def figsave(history, h1,h2,h3,h4, bs, lr, sub):
     fig_acc = plt.figure(figsize=(15, 8))
     plt.plot(history.history['loss'])
     plt.plot(history.history['val_loss'])
@@ -178,7 +192,7 @@ def figsave(history, win_len, win_stride, bs, lr, sub):
     plt.legend(['Training loss', 'Validation loss'], loc='upper left', fontsize=18)
     plt.show()
     print ("saving file:training loss figure")
-    fig_acc.savefig(pic_dir + "/training_w%s_s%s_bs%s_sub%s_lr%s.png" %(int(win_len), int(win_stride), int(bs), int(sub), str(lr)))
+    fig_acc.savefig(pic_dir + "/mlp_training_h1%s_h2%s_h3%s_h4%s_bs%s_sub%s_lr%s.png" %(int(h1), int(h2), int(h3), int(h4), int(bs), int(sub), str(lr)))
     return
 
 
@@ -196,17 +210,16 @@ def get_flops(model):
         return flops.total_float_ops
 
 
-
-
 def scheduler(epoch, lr):
-    if epoch == 100:
-        print("lr decay by 10")
+    if epoch == 1000:
+        print ("lr decay by 10")
         return lr * 0.1
-    elif epoch == 100:
+    elif epoch == 1000:
         print("lr decay by 10")
         return lr * 0.1
     else:
         return lr
+
 
 
 
@@ -224,8 +237,10 @@ def main():
     parser = argparse.ArgumentParser(description='sample creator')
     parser.add_argument('-w', type=int, default=50, help='sequence length', required=True)
     parser.add_argument('-s', type=int, default=1, help='stride of filter')
-    parser.add_argument('-f', type=int, default=10, help='number of filter')
-    parser.add_argument('-k', type=int, default=10, help='size of kernel')
+    parser.add_argument('-h1', type=int, default=200, help='number of neurons')
+    parser.add_argument('-h2', type=int, default=200, help='number of neurons')
+    parser.add_argument('-h3', type=int, default=200, help='number of neurons')
+    parser.add_argument('-h4', type=int, default=50, help='number of neurons')
     parser.add_argument('-bs', type=int, default=512, help='batch size')
     parser.add_argument('-ep', type=int, default=30, help='max epoch')
     parser.add_argument('-pt', type=int, default=20, help='patience')
@@ -240,8 +255,12 @@ def main():
     win_len = args.w
     win_stride = args.s
     partition = 3
-    n_filters = args.f
-    kernel_size = args.k
+
+    h1 = args.h1
+    h2 = args.h2
+    h3 = args.h3
+    h4 = args.h4
+
     lr = args.lr
     bs = args.bs
     ep = args.ep
@@ -257,114 +276,111 @@ def main():
     train_units_samples_lst =[]
     train_units_labels_lst = []
 
+    # for index in units_index_train:
+    #     print("Load data index: ", index)
+    #     sample_array, label_array = load_array (sample_dir_path, index, win_len, win_stride, sampling)
+    #     #sample_array, label_array = shuffle_array(sample_array, label_array)
+    #     print("sample_array.shape", sample_array.shape)
+    #     print("label_array.shape", label_array.shape)
+    #     sample_array = sample_array[::sub]
+    #     label_array = label_array[::sub]
+    #     print("sub sample_array.shape", sample_array.shape)
+    #     print("sub label_array.shape", label_array.shape)
+    #     train_units_samples_lst.append(sample_array)
+    #     train_units_labels_lst.append(label_array)
 
-    for index in units_index_train:
-        print("Load data index: ", index)
-        sample_array, label_array = load_array (sample_dir_path, index, win_len, win_stride, sampling)
-        #sample_array, label_array = shuffle_array(sample_array, label_array)
-        print("sample_array.shape", sample_array.shape)
-        print("label_array.shape", label_array.shape)
-        sample_array = sample_array[::sub]
-        label_array = label_array[::sub]
+    # sample_array = np.concatenate(train_units_samples_lst)
+    # label_array = np.concatenate(train_units_labels_lst)
+    # print ("samples are aggregated")
 
-        sample_array = sample_array.astype(np.float32)
-        label_array = label_array.astype(np.float32)
 
-        print("sub sample_array.shape", sample_array.shape)
-        print("sub label_array.shape", label_array.shape)
-        train_units_samples_lst.append(sample_array)
-        train_units_labels_lst.append(label_array)
-
-    sample_array = np.concatenate(train_units_samples_lst)
-    label_array = np.concatenate(train_units_labels_lst)
-    print ("samples are aggregated")
-
-    release_list(train_units_samples_lst)
-    release_list(train_units_labels_lst)
-    train_units_samples_lst =[]
-    train_units_labels_lst = []
-    print("Memory released")
-
-    #sample_array, label_array = shuffle_array(sample_array, label_array)
-    print("samples are shuffled")
+    sample_array, label_array = load_array_sfa_train()
     print("sample_array.shape", sample_array.shape)
     print("label_array.shape", label_array.shape)
+    label_array = label_array.reshape(label_array.shape[0], 1)
 
-    print ("train sample dtype", sample_array.dtype)
-    print("train label dtype", label_array.dtype)
+    min_max_scaler = preprocessing.MinMaxScaler(feature_range=(-1, 1))
+    # sample_array = min_max_scaler.fit_transform(sample_array)
+
+    print (sample_array[0])
 
 
-    # input_temp = Input(shape=(sample_array.shape[1], sample_array.shape[2]),name='kernel_size%s' %str(int(kernel_size)))
-    # #------
-    # one_d_cnn = one_dcnn(n_filters, kernel_size, sample_array, initializer)
-    # cnn_out = one_d_cnn(input_temp)
-    # x = cnn_out
-    # # x = Dropout(0.5)(x)
-    # main_output = Dense(1, activation='linear', kernel_initializer=initializer, name='main_output')(x)
-    # one_d_cnn_model = Model(inputs=input_temp, outputs=main_output)
 
-    # model = Model(inputs=[input_1, input_2], outputs=main_output)
 
-    one_d_cnn_model = one_dcnn_baseline(n_filters, kernel_size, sample_array, initializer)
-    # one_d_cnn_model = one_dcnn_cmapss(sample_array)
 
-    print(one_d_cnn_model.summary())
-    # one_d_cnn_model.compile(loss='mean_squared_error', optimizer=amsgrad, metrics=[rmse, 'mae'])
 
+
+    # release_list(train_units_samples_lst)
+    # release_list(train_units_labels_lst)
+    # train_units_samples_lst =[]
+    # train_units_labels_lst = []
+    # print("Memory released")
+
+    # sample_array, label_array = shuffle_array(sample_array, label_array)
+    # print("samples are shuffled")
+    # print("sample_array.shape", sample_array.shape)
+    # print("label_array.shape", label_array.shape)
+
+    # sample_array = sample_array.reshape(sample_array.shape[0], sample_array.shape[2])
+    # print("sample_array_reshape.shape", sample_array.shape)
+    # print("label_array_reshape.shape", label_array.shape)
+    feat_len = sample_array.shape[1]
+    print ("feat_len", feat_len)
 
     start = time.time()
 
+    fnn_model = mlps(feat_len, h1, h2, h3, h4)
+
+
+    
+
+    print(fnn_model.summary())
+    # one_d_cnn_model.compile(loss='mean_squared_error', optimizer=amsgrad, metrics=[rmse, 'mae'])
+    fnn_model.compile(loss='mean_squared_error', optimizer=rmsop, metrics='mae')
+
     lr_scheduler = LearningRateScheduler(scheduler)
 
-    one_d_cnn_model.compile(loss='mean_squared_error', optimizer=amsgrad, metrics='mae')
-    history = one_d_cnn_model.fit(sample_array, label_array, epochs=ep, batch_size=bs, validation_split=vs, verbose=2,
-                      callbacks = [lr_scheduler, EarlyStopping(monitor='val_loss', min_delta=0, patience=pt, verbose=1, mode='min'),
+    history = fnn_model.fit(sample_array, label_array, epochs=ep, batch_size=bs, validation_split=vs, verbose=2,
+                      callbacks = [EarlyStopping(monitor='val_loss', min_delta=0, patience=pt, verbose=1, mode='min'),
                                     ModelCheckpoint(model_temp_path, monitor='val_loss', save_best_only=True, mode='min', verbose=1)]
                       )
     # TqdmCallback(verbose=2)
     # one_d_cnn_model.save(tf_temp_path,save_format='tf')
-    figsave(history, win_len, win_stride, bs, lr, sub)
+    # figsave(history, h1, h2, h3, h4, bs, lr, sub)
+    fnn_model = mlps_cmapss(feat_len)
 
-    print("The FLOPs is:{}".format(get_flops(one_d_cnn_model)), flush=True)
+    print("The FLOPs is:{}".format(get_flops(fnn_model)), flush=True)
     num_train = sample_array.shape[0]
     end = time.time()
     training_time = end - start
     print("Training time: ", training_time)
 
-
     ### Test (inference after training)
+
     start = time.time()
 
     output_lst = []
     truth_lst = []
 
-    for index in units_index_test:
-        print ("test idx: ", index)
-        sample_array, label_array = load_array(sample_dir_path, index, win_len, win_stride, sampling)
-        # estimator = load_model(tf_temp_path, custom_objects={'rmse':rmse})
-        print("sample_array.shape", sample_array.shape)
-        print("label_array.shape", label_array.shape)
-        sample_array = sample_array[::sub]
-        label_array = label_array[::sub]
-        print("sub sample_array.shape", sample_array.shape)
-        print("sub label_array.shape", label_array.shape)
 
-        estimator = load_model(model_temp_path)
 
-        y_pred_test = estimator.predict(sample_array)
-        output_lst.append(y_pred_test)
-        truth_lst.append(label_array)
+    sample_array, label_array = load_array_sfa_test()
+    print("sample_array.shape", sample_array.shape)
+    print("label_array.shape", label_array.shape)
 
-    print(output_lst[0].shape)
-    print(truth_lst[0].shape)
 
-    print(np.concatenate(output_lst).shape)
-    print(np.concatenate(truth_lst).shape)
+    # sample_array = min_max_scaler.transform(sample_array)
 
-    output_array = np.concatenate(output_lst)[:, 0]
-    trytg_array = np.concatenate(truth_lst)
+    print (sample_array[0])
 
-    rms = sqrt(mean_squared_error(output_array, trytg_array))
+
+
+    estimator = load_model(model_temp_path)
+    output_array = estimator.predict(sample_array)
+    print("output_array.shape", output_array.shape)
+
+
+    rms = sqrt(mean_squared_error(output_array, label_array))
     print(rms)
     rms = round(rms, 2)
 
@@ -372,28 +388,18 @@ def main():
     inference_time = end - start
     num_test = output_array.shape[0]
 
-    for idx in range(len(units_index_test)):
-        fig_verify = plt.figure(figsize=(24, 10))
-        plt.plot(output_lst[idx], color="green")
-        plt.plot(truth_lst[idx], color="red", linewidth=2.0)
-        plt.title('Unit%s inference' %str(int(units_index_test[idx])), fontsize=30)
-        plt.yticks(fontsize=20)
-        plt.xticks(fontsize=20)
-        plt.ylabel('RUL', fontdict={'fontsize': 24})
-        plt.xlabel('Timestamps', fontdict={'fontsize': 24})
-        plt.legend(['Predicted', 'Truth'], loc='upper right', fontsize=28)
-        plt.show()
-        fig_verify.savefig(pic_dir + "/unit%s_test_w%s_s%s_bs%s_lr%s_sub%s_rmse-%s.png" %(str(int(units_index_test[idx])),
-                                                                              int(win_len), int(win_stride), int(bs),
-                                                                                    str(lr), int(sub), str(rms)))
 
-    print("The FLOPs is:{}".format(get_flops(one_d_cnn_model)), flush=True)
+
+
+    print("The FLOPs is:{}".format(get_flops(fnn_model)), flush=True)
     print("wind length_%s,  win stride_%s" %(str(win_len), str(win_stride)))
     print("# Training samples: ", num_train)
     print("# Inference samples: ", num_test)
     print("Training time: ", training_time)
     print("Inference time: ", inference_time)
     print("Result in RMSE: ", rms)
+
+
 
 
 if __name__ == '__main__':

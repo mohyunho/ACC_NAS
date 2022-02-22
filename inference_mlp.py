@@ -58,7 +58,7 @@ from tensorflow.python.framework.convert_to_constants import  convert_variables_
 
 
 from utils.data_preparation_unit import df_all_creator, df_train_creator, df_test_creator, Input_Gen
-from utils.dnn import one_dcnn, mlps
+from utils.dnn import one_dcnn, mlps, mlps_cmapss
 
 
 # import tensorflow.compat.v1 as tf
@@ -125,12 +125,23 @@ def load_part_array_merge (sample_dir_path, unit_num, win_len, win_stride, parti
     return sample_array, label_array
 
 
-def load_array (sample_dir_path, unit_num, win_len, stride):
-    filename =  'Unit%s_win%s_str%s.npz' %(str(int(unit_num)), win_len, stride)
+# def load_array (sample_dir_path, unit_num, win_len, stride):
+#     filename =  'Unit%s_win%s_str%s.npz' %(str(int(unit_num)), win_len, stride)
+#     filepath =  os.path.join(sample_dir_path, filename)
+#     loaded = np.load(filepath)
+
+#     return loaded['sample'].transpose(2, 0, 1), loaded['label']
+
+def load_array (sample_dir_path, unit_num, win_len, stride, sampling):
+    filename =  'Unit%s_win%s_str%s_smp%s.npz' %(str(int(unit_num)), win_len, stride, sampling)
     filepath =  os.path.join(sample_dir_path, filename)
     loaded = np.load(filepath)
 
     return loaded['sample'].transpose(2, 0, 1), loaded['label']
+
+
+
+
 
 def rmse(y_true, y_pred):
     return backend.sqrt(backend.mean(backend.square(y_pred - y_true), axis=-1))
@@ -177,10 +188,10 @@ def get_flops(model):
 
 
 def scheduler(epoch, lr):
-    if epoch == 10:
+    if epoch == 30:
         print ("lr decay by 10")
         return lr * 0.1
-    elif epoch == 20:
+    elif epoch == 30:
         print("lr decay by 10")
         return lr * 0.1
     else:
@@ -213,6 +224,7 @@ def main():
     parser.add_argument('-vs', type=float, default=0.2, help='validation split')
     parser.add_argument('-lr', type=float, default=0.001, help='learning rate')
     parser.add_argument('-sub', type=int, default=1, help='subsampling stride')
+    parser.add_argument('--sampling', type=int, default=1, help='sub sampling of the given data. If it is 10, then this indicates that we assumes 0.1Hz of data collection')
 
 
     args = parser.parse_args()
@@ -232,6 +244,7 @@ def main():
     pt = args.pt
     vs = args.vs
     sub = args.sub
+    sampling = args.sampling
 
     amsgrad = optimizers.Adam(learning_rate=lr, beta_1=0.9, beta_2=0.999, epsilon=1e-07, amsgrad=True, name='Adam')
     rmsop = optimizers.RMSprop(learning_rate=lr, rho=0.9, momentum=0.0, epsilon=1e-07, centered=False,
@@ -242,7 +255,7 @@ def main():
 
     for index in units_index_train:
         print("Load data index: ", index)
-        sample_array, label_array = load_array (sample_dir_path, index, win_len, win_stride)
+        sample_array, label_array = load_array (sample_dir_path, index, win_len, win_stride, sampling)
         #sample_array, label_array = shuffle_array(sample_array, label_array)
         print("sample_array.shape", sample_array.shape)
         print("label_array.shape", label_array.shape)
@@ -268,7 +281,7 @@ def main():
     print("sample_array.shape", sample_array.shape)
     print("label_array.shape", label_array.shape)
 
-    sample_array = sample_array.reshape(sample_array.shape[0], sample_array.shape[2])
+    sample_array = sample_array.reshape(sample_array.shape[0], sample_array.shape[1]*sample_array.shape[2])
     print("sample_array_reshape.shape", sample_array.shape)
     print("label_array_reshape.shape", label_array.shape)
     feat_len = sample_array.shape[1]
@@ -277,6 +290,7 @@ def main():
     start = time.time()
 
     fnn_model = mlps(feat_len, h1, h2, h3, h4)
+    # fnn_model = mlps_cmapss(feat_len)
 
     print(fnn_model.summary())
     # one_d_cnn_model.compile(loss='mean_squared_error', optimizer=amsgrad, metrics=[rmse, 'mae'])
@@ -307,7 +321,7 @@ def main():
 
     for index in units_index_test:
         print ("test idx: ", index)
-        sample_array, label_array = load_array(sample_dir_path, index, win_len, win_stride)
+        sample_array, label_array = load_array(sample_dir_path, index, win_len, win_stride, sampling)
         # estimator = load_model(tf_temp_path, custom_objects={'rmse':rmse})
         print("sample_array.shape", sample_array.shape)
         print("label_array.shape", label_array.shape)
@@ -315,7 +329,7 @@ def main():
         label_array = label_array[::sub]
         print("sub sample_array.shape", sample_array.shape)
         print("sub label_array.shape", label_array.shape)
-        sample_array = sample_array.reshape(sample_array.shape[0], sample_array.shape[2])
+        sample_array = sample_array.reshape(sample_array.shape[0], sample_array.shape[1]*sample_array.shape[2])
         print("sample_array_reshape.shape", sample_array.shape)
         print("label_array_reshape.shape", label_array.shape)
 

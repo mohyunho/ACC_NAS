@@ -691,6 +691,19 @@ moo_time_avg 0.13888888888888884
 moo_time_std 5.972222222222221
 
 
+#######2022########
+
+gen     nevals  avg             std             min             max      
+0       50      [7.116506]      [0.94330373]    [6.2383]        [10.2419]
+population saved
+pickle dump
+log saved
+Best individual:
+[5, 22, 27, 39]
+[[5, 22, 27, 39]]
+Best individual is saved
+EA time:  6015.53161406517
+
 
 ###########à
 

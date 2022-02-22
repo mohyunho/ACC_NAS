@@ -22,7 +22,7 @@ from tensorflow.keras.models import Sequential, load_model, Model
 from tensorflow.keras.layers import Input, Dense, Flatten, Dropout, Embedding
 from tensorflow.keras.layers import BatchNormalization, Activation, LSTM, TimeDistributed, Bidirectional
 from tensorflow.keras.layers import Conv1D
-from tensorflow.keras.layers import MaxPooling1D
+from tensorflow.keras.layers import MaxPooling1D, AveragePooling1D
 from tensorflow.keras.layers import concatenate
 from tensorflow.keras.callbacks import EarlyStopping, ModelCheckpoint
 from tensorflow.keras.initializers import GlorotNormal, GlorotUniform
@@ -30,6 +30,23 @@ from tensorflow.keras.initializers import GlorotNormal, GlorotUniform
 initializer = GlorotNormal(seed=0)
 #initializer = GlorotUniform(seed=0)
 
+def one_dcnn_cmapss(input_array):
+
+    cnn = Sequential(name='one_d_cnn')
+    cnn.add(Conv1D(filters=8, kernel_size=12, padding='same', input_shape=(input_array.shape[1],input_array.shape[2])))
+    # cnn.add(BatchNormalization())
+    cnn.add(Activation('sigmoid'))
+    cnn.add(AveragePooling1D(pool_size=2))
+    cnn.add(Conv1D(filters=14, kernel_size=4, padding='same'))
+    # cnn.add(BatchNormalization())
+    cnn.add(Activation('sigmoid'))
+    cnn.add(AveragePooling1D(pool_size=2))
+    cnn.add(Flatten())
+    cnn.add(Dense(50))
+    cnn.add(Activation('sigmoid'))
+    cnn.add(Dense(1))
+    cnn.add(Activation("linear"))
+    return cnn
 
 
 def one_dcnn_baseline(n_filters, kernel_size, input_array, initializer):
@@ -283,3 +300,25 @@ def mlps(vec_len, h1, h2, h3, h4):
     model.add(Dense(1))
 
     return model
+
+def mlps_cmapss(vec_len):
+    '''
+
+    '''
+    # model = Sequential()
+    # model.add(Dense(h1, activation='relu', input_shape=(vec_len,)))
+    # model.add(Dense(h4, activation='relu'))
+    # model.add(Dense(1))
+
+    # model = Sequential()
+    # model.add(Dense(30, activation='relu', input_shape=(vec_len,)))
+    # # model.add(Dense(100, activation='relu'))
+    # model.add(Dense(1))
+
+    model = Sequential()
+    model.add(Dense(50, activation='relu', input_shape=(vec_len,)))
+    model.add(Dense(1))
+    
+
+
+    return model    

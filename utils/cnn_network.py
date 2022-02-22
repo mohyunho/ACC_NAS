@@ -160,7 +160,7 @@ class network_fit(object):
 
         model.compile(loss='mean_squared_error', optimizer=amsgrad, metrics=['mae', keras_rmse ])
         history = model.fit(train_sample_array, train_label_array, epochs=self.epoch, batch_size=self.batch,
-                            validation_data=(val_sample_array, val_label_array), verbose=2,
+                            validation_data=(val_sample_array, val_label_array), verbose=0,
                             callbacks=[lr_scheduler, EarlyStopping(monitor='val_loss', min_delta=0, patience=self.patience, verbose=0,
                                                                mode='min'),
                                        ModelCheckpoint(self.model_path, monitor='val_loss',
@@ -175,12 +175,13 @@ class network_fit(object):
         # print ("val_loss_history", val_loss_history)
         val_loss_history = [round(num, 4) for num in val_loss_history]
 
+        val_rmse_hist = history.history['val_root_mean_squared_error']
 
 
         import csv   
-        with open('val_loss_hist.csv', 'a') as f:
+        with open('val_rmse_hist.csv', 'a') as f:
             writer = csv.writer(f)
-            writer.writerow(val_loss_history)    
+            writer.writerow(val_rmse_hist)    
 
 
 
@@ -196,11 +197,16 @@ class network_fit(object):
         print("number of trainable parameters: ", num_tran_params )
         print("training network is successfully completed, time: ", train_time)
         print("val_net in rmse: ", val_net[0])
+        print ("val_rmse_hist[-1]", val_rmse_hist[-1])
 
 
         model = None
         val_pred = None
         del model, val_pred
+ 
+        with open('train_time_hist.csv', 'a') as fq:
+            writer = csv.writer(fq)
+            writer.writerow([train_time])   
 
 
         return val_net, num_tran_params, train_time

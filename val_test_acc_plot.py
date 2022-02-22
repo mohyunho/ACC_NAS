@@ -71,6 +71,7 @@ def load_part_array (sample_dir_path, unit_num, win_len, stride, part_num):
     loaded = np.load(filepath)
     return loaded['sample'], loaded['label']
 
+
 def load_part_array_merge (sample_dir_path, unit_num, win_len, win_stride, partition):
     sample_array_lst = []
     label_array_lst = []
@@ -90,6 +91,13 @@ def load_part_array_merge (sample_dir_path, unit_num, win_len, win_stride, parti
 
 def load_array (sample_dir_path, unit_num, win_len, stride):
     filename =  'Unit%s_win%s_str%s.npz' %(str(int(unit_num)), win_len, stride)
+    filepath =  os.path.join(sample_dir_path, filename)
+    loaded = np.load(filepath)
+
+    return loaded['sample'].transpose(2, 0, 1), loaded['label']
+
+def load_array_samp (sample_dir_path, unit_num, win_len, stride, sampling):
+    filename =  'Unit%s_win%s_str%s_smp%s.npz' %(str(int(unit_num)), win_len, stride, sampling)
     filepath =  os.path.join(sample_dir_path, filename)
     loaded = np.load(filepath)
 
@@ -177,7 +185,7 @@ def main():
     parser.add_argument('--device', type=str, default="GPU", help='Use "basic" if GPU with cuda is not available')
     parser.add_argument('--obj', type=str, default="moo", help='Use "soo" for single objective and "moo" for multiobjective')
     parser.add_argument('--sch', type=int, default=1, help='scheduler')
-
+    parser.add_argument('--samp', type=int, default=1, help='sampling')
     args = parser.parse_args()
 
     win_len = args.w
@@ -190,6 +198,7 @@ def main():
     vs = args.vs
     sub = args.sub
     sch = args.sch
+    sampling = args.samp
 
     device = args.device
     obj = args.obj
@@ -212,6 +221,7 @@ def main():
     for index in units_index_train:
         print("Load data index: ", index)
         sample_array, label_array = load_array (sample_dir_path, index, win_len, win_stride)
+        # sample_array, label_array = load_array_samp (sample_dir_path, index, win_len, win_stride, sampling)
         #sample_array, label_array = shuffle_array(sample_array, label_array)
         print("sample_array.shape", sample_array.shape)
         print("label_array.shape", label_array.shape)
@@ -271,6 +281,7 @@ def main():
     for index in units_index_test:
         print("Load data index: ", index)
         sample_array, label_array = load_array (sample_dir_path, index, win_len, win_stride)
+        # sample_array, label_array = load_array_samp (sample_dir_path, index, win_len, win_stride, sampling)
         #sample_array, label_array = shuffle_array(sample_array, label_array)
         print("sample_array.shape", sample_array.shape)
         print("label_array.shape", label_array.shape)
@@ -323,10 +334,17 @@ def main():
     # for index, ind in mute_log_df.iterrows():
 
 
-    n_layers = 10
-    n_filters = 26
-    kernel_size = 13
-    n_mlp = 10 * 31
+    # n_layers = 10
+    # n_filters = 26
+    # kernel_size = 13
+    # n_mlp = 10 * 31
+    # lr = 10**(-1*4)
+
+
+    n_layers = 5
+    n_filters = 15
+    kernel_size = 15
+    n_mlp = 200
     lr = 10**(-1*4)
 ###################
     # model = one_dcnn(n_layers, n_filters, kernel_size, n_mlp, train_sample_array, initializer)
@@ -403,29 +421,10 @@ def main():
     # plt.ylabel('Loss', fontsize=13)
     # plt.xlabel('Epoch', fontsize=13)
 
+    print ("history.history['val_root_mean_squared_error']", history.history['val_root_mean_squared_error'])
+    print ("history.history['val_loss']", history.history['val_loss'])
 
-    # color = 'tab:red'
-    # ax1.set_xlabel('Epoch', fontsize=13)
-    # ax1.set_ylabel('Loss', fontsize=13)
-    # lns1 = ax1.plot(history.history['loss'], label='Train Loss')
-    # ax1.tick_params(axis='y')
-    # ax1.set_ylim(0, 60)
-    # ax2 = ax1.twinx()  # instantiate a second axes that shares the same x-axis
-    # # color = 'tab:blue'
-    # ax2.set_ylabel('RMSE')  # we already handled the x-label with ax1
-    # lns2 = ax2.plot(history.history['val_root_mean_squared_error'],  label='Validation RMSE', color='r')
-    # ax2.tick_params(axis='y')
-    # ax2.set_ylim(0, 20)
-    #
-    # lns = lns1 + lns2
-    # labs = [l.get_label() for l in lns]
-    # ax1.legend(lns, labs, loc='upper right', fontsize=13)
-    #
-    # fig.tight_layout()  # otherwise the right y-label is slightly clipped
-    # # plt.show()
-    # fig.savefig(os.path.join(pic_dir, "training_curve_scheduler_%s.png" %sch))
-
-
+    color = 'tab:red'
     ax1.set_xlabel('Epoch', fontsize=13)
     ax1.set_ylabel('Loss', fontsize=13)
     lns1 = ax1.plot(history.history['loss'], label='Train Loss')
@@ -433,18 +432,39 @@ def main():
     ax1.set_ylim(0, 60)
     ax2 = ax1.twinx()  # instantiate a second axes that shares the same x-axis
     # color = 'tab:blue'
-    ax2.set_ylabel('Accuracy')  # we already handled the x-label with ax1
-    lns2 = ax2.plot(history.history['val_accuracy'],  label='Validation Accuracy', color='r')
+    ax2.set_ylabel('RMSE')  # we already handled the x-label with ax1
+    lns2 = ax2.plot(history.history['val_root_mean_squared_error'],  label='Validation RMSE', color='r')
     ax2.tick_params(axis='y')
-    ax2.set_ylim(0, 100)
-
+    ax2.set_ylim(0, 20)
+    
     lns = lns1 + lns2
     labs = [l.get_label() for l in lns]
     ax1.legend(lns, labs, loc='upper right', fontsize=13)
-
+    
     fig.tight_layout()  # otherwise the right y-label is slightly clipped
     # plt.show()
-    fig.savefig(os.path.join(pic_dir, "training_acc_curve_scheduler_%s.png" %sch))
+    fig.savefig(os.path.join(pic_dir, "training_curve_scheduler_re_%s.png" %sch))
+
+
+    # ax1.set_xlabel('Epoch', fontsize=13)
+    # ax1.set_ylabel('Loss', fontsize=13)
+    # lns1 = ax1.plot(history.history['loss'], label='Train Loss')
+    # ax1.tick_params(axis='y')
+    # ax1.set_ylim(0, 60)
+    # ax2 = ax1.twinx()  # instantiate a second axes that shares the same x-axis
+    # # color = 'tab:blue'
+    # ax2.set_ylabel('Accuracy')  # we already handled the x-label with ax1
+    # lns2 = ax2.plot(history.history['val_accuracy'],  label='Validation Accuracy', color='r')
+    # ax2.tick_params(axis='y')
+    # ax2.set_ylim(0, 100)
+
+    # lns = lns1 + lns2
+    # labs = [l.get_label() for l in lns]
+    # ax1.legend(lns, labs, loc='upper right', fontsize=13)
+
+    # fig.tight_layout()  # otherwise the right y-label is slightly clipped
+    # # plt.show()
+    # fig.savefig(os.path.join(pic_dir, "training_acc_curve_scheduler_%s.png" %sch))
 
 
 ########

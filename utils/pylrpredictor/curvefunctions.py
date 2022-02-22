@@ -2,6 +2,7 @@ import numpy as np
 
 #all the models that we considered at some point
 #Python dict, dict key and function name are the same
+#Define f_k given theta
 all_models = {}
 model_defaults = {}
 display_name_mapping = {}

@@ -7,6 +7,11 @@ bin-release/
 # Other files and folders
 .settings/
 
+# Folders
+Figures/
+Models/
+Curves/
+
 # Data files
 N-CMAPSS/
 *.h5

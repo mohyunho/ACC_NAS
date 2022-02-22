@@ -44,13 +44,14 @@ class SimpleNeuroEvolutionTask(Task):
     Class for EA Task
     '''
     def __init__(self, train_sample_array, train_label_array, val_sample_array, val_label_array, batch,
-                 epoch, patience, val_split, model_path, device, obj):
+                 epoch, ob_ep, patience, val_split, model_path, device, obj):
         self.train_sample_array = train_sample_array
         self.train_label_array = train_label_array
         self.val_sample_array = val_sample_array
         self.val_label_array = val_label_array
         self.batch = batch
         self.epoch = epoch
+        self.ob_ep = ob_ep
         self.patience = patience
         self.val_split = val_split
         self.model_path = model_path
