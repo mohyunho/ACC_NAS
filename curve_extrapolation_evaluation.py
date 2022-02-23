@@ -20,12 +20,14 @@ from sklearn import pipeline
 from sklearn.metrics import mean_squared_error
 from math import sqrt
 
+
 import matplotlib.pyplot as plt
 from matplotlib.pyplot import cm
 import matplotlib.figure
 import matplotlib.backends.backend_agg as agg
 import matplotlib.backends.backend_svg as svg
 
+from scipy import stats
 from scipy.optimize import curve_fit
 from utils.curve_functions import *
 
@@ -78,13 +80,17 @@ def main():
     val_rmse_mid = []
     val_rmse_prediction = []
 
+    extp_time_lst = []
 
     for arch_idx, val_rmse_hist in val_rmse_df.iterrows():
-        print ("arch_idx", arch_idx)
+
+        start_itr = time.time()
+
+        # print ("arch_idx", arch_idx)
         y_all = val_rmse_hist
-        print ("y_all", y_all)
+        # print ("y_all", y_all)
         x_max = np.arange(1,31)
-        print ("x_max", x_max)
+        # print ("x_max", x_max)
         x_observation = x_max[:ob_ep]
         y_obesrvation = y_all[:ob_ep]
         fig = matplotlib.figure.Figure(figsize=(8, 6))
@@ -98,7 +104,7 @@ def main():
         curve_y_lst = []
 
         for index, (key, value) in enumerate(all_models.items()):
-            print ("value", value)
+            # print ("value", value)
             next_x = np.arange(ob_ep+1,31)
             if key == "loglog_linear":
                 fitting_parameters, covariance = curve_fit(value, x_observation, y_obesrvation, p0=[10,1,10], maxfev=5000000)
@@ -134,36 +140,44 @@ def main():
         # fig.savefig(os.path.join(pic_dir, 'curve_archt%s_epoch_%s.png' %(arch_idx, ob_ep)), bbox_inches='tight')
 
         # list of 1d arrays to 2d array
-        print ("y_func_lst", y_func_lst)
+        # print ("y_func_lst", y_func_lst)
         input_arrays = np.transpose(np.stack(y_func_lst, axis=0))
-        print ("input_arrays.shape", input_arrays.shape)
+        # print ("input_arrays.shape", input_arrays.shape)
         # Find coefficient of linear combination of vectors with least square (olve a least-squares problem with CVXPY) 
         # https://www.cvxpy.org/examples/basic/least_squares.html
         # m: length of vector, n: numb of curves
         # Shape of A:(m, n), length of b: (m)
-        np.random.seed(0)
-        import cvxpy as cp
+
+        # np.random.seed(0)
+        # import cvxpy as cp
+
         n = len(all_models)
-        print ("n", n)
+        # print ("n", n)
         coeff = cp.Variable(n)
-        print ("coeff",coeff)
+        # print ("coeff",coeff)
         cost = cp.sum_squares(input_arrays @ coeff - y_obesrvation)
-        print ("cost", cost)
+        # print ("cost", cost)
 
         # constraints = [input_arrays @ coeff >= y_obesrvation, coeff >= 0]
         constraints = [coeff >= 0]
 
         prob = cp.Problem(cp.Minimize(cost), constraints)
-        prob.solve(verbose=True)
+        # prob.solve(verbose=True)
+        prob.solve()
 
-        print("The optimal coeff is")
-        print(coeff.value)
+        # print("The optimal coeff is")
+        # print(coeff.value)
 
         # Combine (linear combination) of curves
         curves_arrays = np.transpose(np.stack(curve_y_lst, axis=0))
-        print("curves_arrays.shape", curves_arrays.shape)
+        # print("curves_arrays.shape", curves_arrays.shape)
         combined_y = curves_arrays  @ coeff.value 
-        print ("combined_y", combined_y)
+        # print ("combined_y", combined_y)
+
+        end_itr = time.time()
+        extp_time = end_itr - start_itr
+        extp_time_lst.append(extp_time)
+
 
         c = next(color)
         ax.plot(x_max, combined_y, color=c, marker='D', linewidth=2, label="combined", zorder=2)
@@ -188,28 +202,39 @@ def main():
     # save to csv file
     rank_df = pd.DataFrame()
     rank_df["val_rmse_observation"] = np.asarray(val_rmse_observation)
-    temp = np.argsort(-1*np.asarray(val_rmse_observation))[::-1]
+    rank_df["val_rmse_prediction"] = np.asarray(val_rmse_prediction)
+    rank_df["val_rmse_mid"] = np.asarray(val_rmse_mid)
+    print ("len(rank_df)", len(rank_df))
+    rank_df.drop(rank_df.loc[rank_df['val_rmse_prediction']>=11.0].index, inplace=True)
+    rank_df.drop(rank_df.loc[rank_df['val_rmse_prediction']<=1.0].index, inplace=True)
+    print ("len(rank_df)", len(rank_df))
+
+    temp = np.argsort(-1*np.asarray(rank_df["val_rmse_observation"]))[::-1]
     ranks = np.empty_like(temp)
-    ranks[temp] = np.arange(len(val_rmse_observation))
+    ranks[temp] = np.arange(len(rank_df["val_rmse_observation"]))
     rank_df["rank_observation"] = ranks
 
-    rank_df["val_rmse_prediction"] = np.asarray(val_rmse_prediction)
-    temp = np.argsort(-1*np.asarray(val_rmse_prediction))[::-1]
+    
+    temp = np.argsort(-1*np.asarray(rank_df["val_rmse_prediction"] ))[::-1]
     ranks = np.empty_like(temp)
-    ranks[temp] = np.arange(len(val_rmse_prediction))
+    ranks[temp] = np.arange(len(rank_df["val_rmse_prediction"] ))
     rank_df["rank_prediction"] = ranks
 
-    rank_df["val_rmse_mid"] = np.asarray(val_rmse_mid)
-    temp = np.argsort(-1*np.asarray(val_rmse_mid))[::-1]
+    
+    temp = np.argsort(-1*np.asarray(rank_df["val_rmse_mid"]))[::-1]
     ranks = np.empty_like(temp)
-    ranks[temp] = np.arange(len(val_rmse_mid))
+    ranks[temp] = np.arange(len(rank_df["val_rmse_mid"]))
     rank_df["rank_mid"] = ranks
 
 
-    rank_df.to_csv(os.path.join(current_dir, 'rank_val_rmse_0_50_%s.csv' %ob_ep))
+
+
+
+
+    
 
     # Top 5 RMSE
-    top_k = 10
+    top_k = 50
     rank_df = rank_df.sort_values(by='rank_observation', ascending=True)
     topk_observation = rank_df["val_rmse_observation"][:top_k]
     topk_prediction = rank_df["val_rmse_prediction"][:top_k]
@@ -217,14 +242,37 @@ def main():
     rms = round(rms, 4)
     print ("Topk_obs_pred_rmse", rms)
 
-    rank_df = rank_df.sort_values(by='rank_observation', ascending=True)
-    topk_observation = rank_df["val_rmse_observation"][:top_k]
     topk_mid = rank_df["val_rmse_mid"][:top_k]
     rms = sqrt(mean_squared_error(topk_observation, topk_mid))
     rms = round(rms, 4)
     print ("Topk_obs_mid_rmse", rms)
 
+    rank_df.to_csv(os.path.join(current_dir, 'rank_val_rmse_0_50_%s.csv' %ob_ep))
 
+
+    # Spearman rank-order correlation coefficient 
+    rho_pred, pval_pred = stats.spearmanr(rank_df["rank_observation"], rank_df["rank_prediction"])
+    rho_obsn, pval_obsn = stats.spearmanr(rank_df["rank_observation"], rank_df["rank_mid"])
+
+    print ("rho_pred", rho_pred)
+    print ("pval_pred", pval_pred)
+    print ("rho_obsn", rho_obsn)
+    print ("pval_obsn", pval_obsn)
+
+
+    # Spearman rank-order correlation coefficient 
+    rho_pred, pval_pred = stats.spearmanr(rank_df["rank_observation"][:top_k], rank_df["rank_prediction"][:top_k])
+    rho_obsn, pval_obsn = stats.spearmanr(rank_df["rank_observation"][:top_k], rank_df["rank_mid"][:top_k])
+
+    print ("top k rho_pred", rho_pred)
+    print ("top k pval_pred", pval_pred)
+    print ("top k rho_obsn", rho_obsn)
+    print ("top k pval_obsn", pval_obsn)
+
+    # elapsed time for extrapolation per individual
+    extp_time_avg = sum(extp_time_lst) / len(extp_time_lst)
+    extp_time_avg = round(extp_time_avg, 2)
+    print ("extp_time_avg", extp_time_avg)
 
     # box plot
     fig = matplotlib.figure.Figure(figsize=(8, 6))
@@ -234,6 +282,7 @@ def main():
     ax.boxplot(box_plot_data)
     ax.set_ylabel('Validation RMSE', fontsize=15)
     ax.set_yticks(np.arange(6,11.5,0.5))
+    ax.set_ylim(6, 10)
     ax.set_xticklabels(["observation", "prediction", "at epoch %s" %ob_ep], fontsize=15)
     fig.savefig(os.path.join(pic_dir, 'boxplot_0_50_epoch_%s.png' %ob_ep), bbox_inches='tight')
 
@@ -254,7 +303,7 @@ def main():
 
     rmse_range = np.arange(6,11.5,0.5)
     # y_range = np.arange(int(min(rank_df["val_rmse_prediction"])), int(max(rank_df["val_rmse_prediction"])) + 0.5 ,0.5)
-    y_range = np.arange(7, 10.5 ,0.5)
+    y_range = np.arange(6, 10.5 ,0.5)
     ax.set_xticks(rmse_range)
     ax.set_xticklabels(rmse_range, rotation=60)
     ax.set_yticks(y_range)
@@ -291,10 +340,14 @@ def main():
                edgecolors=(0.0, 0.0, 0.0), zorder=1, s=20 )
 
     rmse_range = np.arange(6,11.5,0.5)
-    y_range = np.arange(int(min(rank_df["val_rmse_mid"])), int(max(rank_df["val_rmse_mid"])) + 0.5 ,0.5)
+    # y_range = np.arange(int(min(rank_df["val_rmse_mid"])), int(max(rank_df["val_rmse_mid"])) + 0.5 ,0.5)
+    y_range = np.arange(6, 10.5 ,0.5)
+    
+
     ax.set_xticks(rmse_range)
     ax.set_xticklabels(rmse_range, rotation=60)
     ax.set_yticks(y_range)
+    ax.set_ylim(6, 10)
     # ax.set_yticklabels(rmse_range)
     # ax.set_xlim(x_min, x_max)
     # ax.set_ylim(y_min, y_max)

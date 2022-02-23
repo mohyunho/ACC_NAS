@@ -705,7 +705,94 @@ Best individual is saved
 EA time:  6015.53161406517
 
 
-###########à
+###########
+5
+Topk_obs_pred_rmse 1.7147
+Topk_obs_mid_rmse 3.071
+rho_pred 0.5776671408250356
+pval_pred 5.756814977907376e-08
+rho_obsn 0.788108108108108
+pval_obsn 4.833774583014055e-17
+
+15
+Topk_obs_pred_rmse 0.683
+Topk_obs_mid_rmse 1.3627
+rho_pred 0.7157716179255207
+pval_pred 1.7339059977993237e-16
+rho_obsn 0.29407742478434673
+pval_obsn 0.003458745370525646
+
+10
+Topk_obs_pred_rmse 0.8382
+Topk_obs_mid_rmse 1.12
+rho_pred 0.6430497973274971
+pval_pred 4.792185860735202e-12
+rho_obsn 0.7655163910423377
+pval_obsn 6.319378242738529e-19
+
+top 50
+rho_pred 0.6430497973274971
+pval_pred 4.792185860735202e-12
+rho_obsn 0.7655163910423377
+pval_obsn 6.319378242738529e-19
+top k rho_pred 0.14362545018007203
+top k pval_pred 0.319702499972949
+top k rho_obsn 0.1872268907563025
+top k pval_obsn 0.19293115958816123
+
+top 10
+Topk_obs_pred_rmse 0.9936
+Topk_obs_mid_rmse 1.0576
+rho_pred 0.6430497973274971
+pval_pred 4.792185860735202e-12
+rho_obsn 0.7655163910423377
+pval_obsn 6.319378242738529e-19
+top k rho_pred 0.3939393939393939
+top k pval_pred 0.25999776683488757
+top k rho_obsn 0.33333333333333326
+top k pval_obsn 0.34659350708733405
+
+14
+len(rank_df) 99
+len(rank_df) 97
+Topk_obs_pred_rmse 0.5838
+Topk_obs_mid_rmse 0.7881
+rho_pred 0.8188381022512098
+pval_pred 1.2443903365986498e-24
+rho_obsn 0.7835709025878392
+pval_obsn 2.3926087352730593e-21
+
+top 50
+Topk_obs_pred_rmse 0.6706
+Topk_obs_mid_rmse 0.8198
+rho_pred 0.8188381022512098
+pval_pred 1.2443903365986498e-24
+rho_obsn 0.7835709025878392
+pval_obsn 2.3926087352730593e-21
+top k rho_pred 0.5459303721488595
+top k pval_pred 4.119796503086483e-05
+top k rho_obsn 0.26837935174069627
+top k pval_obsn 0.05950225010467334
+
+top 10
+Topk_obs_pred_rmse 0.7103
+Topk_obs_mid_rmse 0.8589
+rho_pred 0.8188381022512098
+pval_pred 1.2443903365986498e-24
+rho_obsn 0.7835709025878392
+pval_obsn 2.3926087352730593e-21
+top k rho_pred 0.7212121212121211
+top k pval_pred 0.018573155089460208
+top k rho_obsn 0.5636363636363636
+top k pval_obsn 0.08972402831709125
+
+13
+Topk_obs_pred_rmse 0.5981
+Topk_obs_mid_rmse 0.5613
+rho_pred 0.796703743895822
+pval_pred 2.836828573348312e-22
+rho_obsn 0.8579625610417797
+pval_obsn 6.120904863790829e-29
 
 ----------
 python3 inference_cnnlstm.py -w 50 -s 50 -f 3 -k 3 -bs 128 -ep 40 -pt 10 -lr 0.0001 -vs 0.1 -sub 1 -s_stride 1 -s_len 30 -n_conv 1 -lstm1 10 -lstm2 5
