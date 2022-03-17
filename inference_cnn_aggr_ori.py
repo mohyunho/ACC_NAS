@@ -96,6 +96,9 @@ pd.options.mode.chained_assignment = None  # default='warn'
 # tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
 # tf.get_logger().setLevel(logging.ERROR)
 
+def train_params_count(model):
+    trainableParams = np.sum([np.prod(v.get_shape()) for v in model.trainable_weights])
+    return trainableParams
 
 
 # tf.config.set_visible_devices([], 'GPU')
@@ -136,20 +139,20 @@ def load_part_array_merge (sample_dir_path, unit_num, win_len, win_stride, parti
     return sample_array, label_array
 
 
-# def load_array (sample_dir_path, unit_num, win_len, stride):
-#     filename =  'Unit%s_win%s_str%s.npz' %(str(int(unit_num)), win_len, stride)
-#     filepath =  os.path.join(sample_dir_path, filename)
-#     loaded = np.load(filepath)
-
-#     return loaded['sample'].transpose(2, 0, 1), loaded['label']
-
-
-def load_array (sample_dir_path, unit_num, win_len, stride, sampling):
-    filename =  'Unit%s_win%s_str%s_smp%s.npz' %(str(int(unit_num)), win_len, stride, sampling)
+def load_array (sample_dir_path, unit_num, win_len, stride):
+    filename =  'Unit%s_win%s_str%s.npz' %(str(int(unit_num)), win_len, stride)
     filepath =  os.path.join(sample_dir_path, filename)
     loaded = np.load(filepath)
 
     return loaded['sample'].transpose(2, 0, 1), loaded['label']
+
+
+# def load_array (sample_dir_path, unit_num, win_len, stride, sampling):
+#     filename =  'Unit%s_win%s_str%s_smp%s.npz' %(str(int(unit_num)), win_len, stride, sampling)
+#     filepath =  os.path.join(sample_dir_path, filename)
+#     loaded = np.load(filepath)
+
+#     return loaded['sample'].transpose(2, 0, 1), loaded['label']
 
 
 def rmse(y_true, y_pred):
@@ -197,17 +200,13 @@ def get_flops(model):
 
 
 
-
 def scheduler(epoch, lr):
-    if epoch == 100:
-        print("lr decay by 10")
+    if epoch == 17:
         return lr * 0.1
-    elif epoch == 100:
-        print("lr decay by 10")
-        return lr * 0.1
+    # elif epoch == 27:
+    #     return lr * tf.math.exp(-0.1)
     else:
         return lr
-
 
 
 def release_list(a):
@@ -223,14 +222,14 @@ def main():
     # current_dir = os.path.dirname(os.path.abspath(__file__))
     parser = argparse.ArgumentParser(description='sample creator')
     parser.add_argument('-w', type=int, default=50, help='sequence length', required=True)
-    parser.add_argument('-s', type=int, default=1, help='stride of filter')
+    parser.add_argument('-s', type=int, default=50, help='stride of filter')
     parser.add_argument('-f', type=int, default=10, help='number of filter')
     parser.add_argument('-k', type=int, default=10, help='size of kernel')
     parser.add_argument('-bs', type=int, default=512, help='batch size')
     parser.add_argument('-ep', type=int, default=30, help='max epoch')
     parser.add_argument('-pt', type=int, default=20, help='patience')
     parser.add_argument('-vs', type=float, default=0.2, help='validation split')
-    parser.add_argument('-lr', type=float, default=0.001, help='learning rate')
+    parser.add_argument('-lr', type=float, default=10**(-1*4), help='learning rate')
     parser.add_argument('-sub', type=int, default=1, help='subsampling stride')
     parser.add_argument('--sampling', type=int, default=1, help='sub sampling of the given data. If it is 10, then this indicates that we assumes 0.1Hz of data collection')
 
@@ -254,13 +253,15 @@ def main():
     rmsop = optimizers.RMSprop(learning_rate=lr, rho=0.9, momentum=0.0, epsilon=1e-07, centered=False,
                                name='RMSprop')
 
+
+
     train_units_samples_lst =[]
     train_units_labels_lst = []
 
 
     for index in units_index_train:
         print("Load data index: ", index)
-        sample_array, label_array = load_array (sample_dir_path, index, win_len, win_stride, sampling)
+        sample_array, label_array = load_array (sample_dir_path, index, win_len, win_stride)
         #sample_array, label_array = shuffle_array(sample_array, label_array)
         print("sample_array.shape", sample_array.shape)
         print("label_array.shape", label_array.shape)
@@ -285,13 +286,38 @@ def main():
     train_units_labels_lst = []
     print("Memory released")
 
-    #sample_array, label_array = shuffle_array(sample_array, label_array)
+    sample_array, label_array = shuffle_array(sample_array, label_array)
     print("samples are shuffled")
     print("sample_array.shape", sample_array.shape)
     print("label_array.shape", label_array.shape)
 
-    print ("train sample dtype", sample_array.dtype)
-    print("train label dtype", label_array.dtype)
+    # sample_array = sample_array.reshape(sample_array.shape[0], sample_array.shape[2])
+    print("sample_array_reshape.shape", sample_array.shape)
+    print("label_array_reshape.shape", label_array.shape)
+    window_length = sample_array.shape[1]
+    feat_len = sample_array.shape[2]
+    num_samples = sample_array.shape[0]
+    print ("window_length", window_length)
+    print("feat_len", feat_len)
+
+    train_sample_array = sample_array[:int(num_samples*(1-vs))]
+    train_label_array = label_array[:int(num_samples*(1-vs))]
+    val_sample_array = sample_array[int(num_samples*(1-vs))+1:]
+    val_label_array = label_array[int(num_samples*(1-vs))+1:]
+
+    print ("train_sample_array.shape", train_sample_array.shape)
+    print ("train_label_array.shape", train_label_array.shape)
+    print ("val_sample_array.shape", val_sample_array.shape)
+    print ("val_label_array.shape", val_label_array.shape)
+
+    sample_array = []
+    label_array = []
+
+    release_list(train_units_samples_lst)
+    release_list(train_units_labels_lst)
+    train_units_samples_lst =[]
+    train_units_labels_lst = []
+    print("Memory released")
 
 
     # input_temp = Input(shape=(sample_array.shape[1], sample_array.shape[2]),name='kernel_size%s' %str(int(kernel_size)))
@@ -305,7 +331,7 @@ def main():
 
     # model = Model(inputs=[input_1, input_2], outputs=main_output)
 
-    one_d_cnn_model = one_dcnn_baseline(n_filters, kernel_size, sample_array, initializer)
+    one_d_cnn_model = one_dcnn_baseline(n_filters, kernel_size, train_sample_array, initializer)
     # one_d_cnn_model = one_dcnn_cmapss(sample_array)
 
     print(one_d_cnn_model.summary())
@@ -316,8 +342,10 @@ def main():
 
     lr_scheduler = LearningRateScheduler(scheduler)
 
-    one_d_cnn_model.compile(loss='mean_squared_error', optimizer=amsgrad, metrics='mae')
-    history = one_d_cnn_model.fit(sample_array, label_array, epochs=ep, batch_size=bs, validation_split=vs, verbose=2,
+    keras_rmse = tf.keras.metrics.RootMeanSquaredError()
+
+    one_d_cnn_model.compile(loss='mean_squared_error', optimizer=amsgrad, metrics=['mae', keras_rmse ])
+    history = one_d_cnn_model.fit(train_sample_array, train_label_array, epochs=ep, batch_size=bs, validation_data=(val_sample_array, val_label_array), verbose=2,
                       callbacks = [lr_scheduler, EarlyStopping(monitor='val_loss', min_delta=0, patience=pt, verbose=1, mode='min'),
                                     ModelCheckpoint(model_temp_path, monitor='val_loss', save_best_only=True, mode='min', verbose=1)]
                       )
@@ -326,11 +354,16 @@ def main():
     figsave(history, win_len, win_stride, bs, lr, sub)
 
     print("The FLOPs is:{}".format(get_flops(one_d_cnn_model)), flush=True)
-    num_train = sample_array.shape[0]
+    num_train = train_sample_array.shape[0]
     end = time.time()
     training_time = end - start
     print("Training time: ", training_time)
 
+    val_rmse_hist = history.history['val_root_mean_squared_error']
+    print ("val_rmse_hist[-1]", val_rmse_hist[-1])
+
+
+    num_tran_params = train_params_count(one_d_cnn_model)
 
     ### Test (inference after training)
     start = time.time()
@@ -340,7 +373,8 @@ def main():
 
     for index in units_index_test:
         print ("test idx: ", index)
-        sample_array, label_array = load_array(sample_dir_path, index, win_len, win_stride, sampling)
+        # sample_array, label_array = load_array(sample_dir_path, index, win_len, win_stride, sampling)
+        sample_array, label_array = load_array(sample_dir_path, index, win_len, win_stride)
         # estimator = load_model(tf_temp_path, custom_objects={'rmse':rmse})
         print("sample_array.shape", sample_array.shape)
         print("label_array.shape", label_array.shape)
@@ -408,6 +442,7 @@ def main():
     print("wind length_%s,  win stride_%s" %(str(win_len), str(win_stride)))
     print("# Training samples: ", num_train)
     print("# Inference samples: ", num_test)
+    print("number of trainable parameters: ", num_tran_params )
     print("Training time: ", training_time)
     print("Inference time: ", inference_time)
     print ("score", score)

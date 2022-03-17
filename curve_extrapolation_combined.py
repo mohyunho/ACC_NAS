@@ -20,38 +20,15 @@ if not os.path.exists(pic_dir):
 
 all_models = {}
 
-# def vap(x, a, b, c):
-#     """ Vapor pressure model """
-#     return np.exp(a+b/x+c*np.log(x))
-# all_models["vap"] = vap
-
 def pow3(x, c, a, alpha):
     return  c - a * x**(-alpha)
 all_models["pow3"] = pow3
-
-# def loglog_linear(x, a, b):
-#     x = np.log(x)
-#     return np.log(a*x + b)
-# all_models["loglog_linear"] = loglog_linear
 
 def loglog_linear(x, a, b, c):
     # x = x+1
     x = np.log(x)
     return -1*np.log(np.abs(a*x - b))+c
 all_models["loglog_linear"] = loglog_linear
-
-# def dr_hill(x, alpha, theta, eta, kappa):
-#     return alpha + (theta*(x**eta)) / (kappa**eta + x**eta)
-# all_models["dr_hill"] = dr_hill
-
-# def log_power(x, a, b, c):
-#     #logistic power
-#     return -1*a/(10.+ np.abs(x/np.exp(b))**c)
-# all_models["log_power"] = log_power
-
-# def pow4(x, c, a, b, alpha):
-#     return c - (a*x+b)**-alpha
-# all_models["pow4"] = pow4
 
 def mmf(x, alpha, beta, kappa, delta):
     return alpha - (alpha - beta) / (1. + np.abs(kappa * x)**delta)

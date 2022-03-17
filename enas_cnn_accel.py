@@ -29,10 +29,9 @@ from sklearn import pipeline
 from sklearn.metrics import mean_squared_error
 from math import sqrt
 
-from utils.cnn_network import network_fit
-
-from utils.cnn_task import SimpleNeuroEvolutionTask
-from utils.ea_multi import GeneticAlgorithm
+# from utils.accel_cnn_network import network_fit
+from utils.accel_cnn_task import SimpleNeuroEvolutionTask
+from utils.accel_ea_multi import GeneticAlgorithm
 
 
 
@@ -151,20 +150,19 @@ def main():
     # current_dir = os.path.dirname(os.path.abspath(__file__))
     parser = argparse.ArgumentParser(description='NAS CNN')
     parser.add_argument('-w', type=int, default=50, help='sequence length', required=True)
-    parser.add_argument('-s', type=int, default=1, help='stride of filter')
-    parser.add_argument('-bs', type=int, default=1000, help='batch size')
+    parser.add_argument('-s', type=int, default=50, help='stride of filter')
+    parser.add_argument('-bs', type=int, default=512, help='batch size')
     parser.add_argument('-ep', type=int, default=30, help='max epoch')
-    parser.add_argument('-obep', type=int, default=15, help='number of epoch observation before extrapolation')
-    parser.add_argument('-pt', type=int, default=20, help='patience')
-    parser.add_argument('-vs', type=float, default=0.1, help='validation split')
-    parser.add_argument('-lr', type=float, default=0.001, help='learning rate')
+    parser.add_argument('-pt', type=int, default=30, help='patience')
+    parser.add_argument('-vs', type=float, default=0.2, help='validation split')
+    parser.add_argument('-lr', type=float, default=10**(-1*4), help='learning rate')
     parser.add_argument('-sub', type=int, default=1, help='subsampling stride')
     parser.add_argument('-t', type=int, required=True, help='trial')
     parser.add_argument('--pop', type=int, default=50, required=False, help='population size of EA')
     parser.add_argument('--gen', type=int, default=50, required=False, help='generations of evolution')
     parser.add_argument('--device', type=str, default="GPU", help='Use "basic" if GPU with cuda is not available')
     parser.add_argument('--obj', type=str, default="soo", help='Use "soo" for single objective and "moo" for multiobjective')
-    
+    parser.add_argument('-obep', type=int, default=15, help='number of epoch observation before extrapolation')
 
     args = parser.parse_args()
 
@@ -262,7 +260,7 @@ def main():
             'mut_gene_probability': 0.3  # 0.1
         }
 
-        mutate_log_path = 'EA_log/mute_log_%s_%s_%s_%s.csv' % (pop_size, n_generations, obj, trial)
+        mutate_log_path = 'EA_log/mute_log_extpl_%s_%s_%s_%s_%s.csv' % (pop_size, n_generations, obj, trial, ep)
         mutate_log_col = ['idx', 'params_1', 'params_2', 'params_3', 'params_4', 'fitness_1',
                           'gen']
         mutate_log_df = pd.DataFrame(columns=mutate_log_col, index=None)
@@ -292,8 +290,8 @@ def main():
             'mut_gene_probability': 0.4  # 0.1
         }
 
-        mutate_log_path = 'EA_log/mute_log_%s_%s_%s_%s.csv' % (pop_size, n_generations, obj, trial)
-        mutate_log_col = ['idx', 'params_1', 'params_2', 'params_3', 'params_4', 'params_5',
+        mutate_log_path = 'EA_log/mute_log_extpl_%s_%s_%s_%s_%s.csv' % (pop_size, n_generations, obj, trial, ep)
+        mutate_log_col = ['idx', 'params_1', 'params_2', 'params_3', 'params_4', 
                           'fitness_1', 'fitness_2', 'hypervolume', 'gen']
         mutate_log_df = pd.DataFrame(columns=mutate_log_col, index=None)
         mutate_log_df.to_csv(mutate_log_path, index=False)
@@ -321,7 +319,8 @@ def main():
 
 
 
-    prft_path = os.path.join(directory_path, 'prft_out_%s_%s_%s.csv' % (pop_size, n_generations, trial))
+    prft_path = os.path.join(directory_path, 'prft_out_extpl_%s_%s_%s_%s.csv' % (pop_size, n_generations, trial, ep))
+
 
 
 

@@ -12,7 +12,7 @@ from abc import abstractmethod
 import random
 import tensorflow as tf
 # from input_creator import input_gen
-from utils.cnn_network import network_fit
+from utils.accel_cnn_network import network_fit
 
 seed = 0
 random.seed(seed)
@@ -44,13 +44,14 @@ class SimpleNeuroEvolutionTask(Task):
     Class for EA Task
     '''
     def __init__(self, train_sample_array, train_label_array, val_sample_array, val_label_array, batch,
-                 epoch, patience, val_split, model_path, device, obj):
+                 epoch, ob_ep, patience, val_split, model_path, device, obj):
         self.train_sample_array = train_sample_array
         self.train_label_array = train_label_array
         self.val_sample_array = val_sample_array
         self.val_label_array = val_label_array
         self.batch = batch
         self.epoch = epoch
+        self.ob_ep = ob_ep
         self.patience = patience
         self.val_split = val_split
         self.model_path = model_path
@@ -62,10 +63,10 @@ class SimpleNeuroEvolutionTask(Task):
 
     def get_parameters_bounds(self):
         bounds = [
-            (1, 10), #n_layers
+            (2, 10), #n_layers
             (5, 25), #n_filters
             (5, 25), #kernel_size
-            (1, 20), #n_mlp
+            (5, 20), #n_mlp
         ]
         return bounds
 
@@ -91,13 +92,16 @@ class SimpleNeuroEvolutionTask(Task):
         print("lr: ", lr)
 
         cnn_class = network_fit(self.train_sample_array, n_layers, n_filters, kernel_size, n_mlp,
-                                self.batch, self.epoch, self.patience, self.val_split,
+                                self.batch, self.ob_ep, self.epoch, self.patience, self.val_split,
                                 self.model_path, self.device)
 
 
         cnn_net = cnn_class.trained_model()
 
-        validation, num_tran_params, train_time = cnn_class.train_net(cnn_net, lr, self.train_sample_array, self.train_label_array, self.val_sample_array,
+        # Calculate architecture score
+        
+        geno_lst = [genotype[0], genotype[1], genotype[2], genotype[3]]
+        validation, num_tran_params, train_time = cnn_class.train_net(cnn_net, lr, geno_lst, self.train_sample_array, self.train_label_array, self.val_sample_array,
                                     self.val_label_array)
 
         val_value = validation[0]

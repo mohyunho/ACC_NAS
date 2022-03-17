@@ -98,10 +98,10 @@ initializer = GlorotNormal(seed=0)
 
 
 def scheduler(epoch, lr):
-    if epoch == 15:
+    if epoch == 17:
         return lr * 0.1
-    elif epoch == 25:
-        return lr * tf.math.exp(-0.1)
+    # elif epoch == 27:
+    #     return lr * tf.math.exp(-0.1)
     else:
         return lr
 

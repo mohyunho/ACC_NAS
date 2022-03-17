@@ -250,88 +250,6 @@ def main():
     sub = args.sub
     sampling = args.sampling
 
-    amsgrad = optimizers.Adam(learning_rate=lr, beta_1=0.9, beta_2=0.999, epsilon=1e-07, amsgrad=True, name='Adam')
-    rmsop = optimizers.RMSprop(learning_rate=lr, rho=0.9, momentum=0.0, epsilon=1e-07, centered=False,
-                               name='RMSprop')
-
-    train_units_samples_lst =[]
-    train_units_labels_lst = []
-
-
-    for index in units_index_train:
-        print("Load data index: ", index)
-        sample_array, label_array = load_array (sample_dir_path, index, win_len, win_stride, sampling)
-        #sample_array, label_array = shuffle_array(sample_array, label_array)
-        print("sample_array.shape", sample_array.shape)
-        print("label_array.shape", label_array.shape)
-        sample_array = sample_array[::sub]
-        label_array = label_array[::sub]
-
-        sample_array = sample_array.astype(np.float32)
-        label_array = label_array.astype(np.float32)
-
-        print("sub sample_array.shape", sample_array.shape)
-        print("sub label_array.shape", label_array.shape)
-        train_units_samples_lst.append(sample_array)
-        train_units_labels_lst.append(label_array)
-
-    sample_array = np.concatenate(train_units_samples_lst)
-    label_array = np.concatenate(train_units_labels_lst)
-    print ("samples are aggregated")
-
-    release_list(train_units_samples_lst)
-    release_list(train_units_labels_lst)
-    train_units_samples_lst =[]
-    train_units_labels_lst = []
-    print("Memory released")
-
-    #sample_array, label_array = shuffle_array(sample_array, label_array)
-    print("samples are shuffled")
-    print("sample_array.shape", sample_array.shape)
-    print("label_array.shape", label_array.shape)
-
-    print ("train sample dtype", sample_array.dtype)
-    print("train label dtype", label_array.dtype)
-
-
-    # input_temp = Input(shape=(sample_array.shape[1], sample_array.shape[2]),name='kernel_size%s' %str(int(kernel_size)))
-    # #------
-    # one_d_cnn = one_dcnn(n_filters, kernel_size, sample_array, initializer)
-    # cnn_out = one_d_cnn(input_temp)
-    # x = cnn_out
-    # # x = Dropout(0.5)(x)
-    # main_output = Dense(1, activation='linear', kernel_initializer=initializer, name='main_output')(x)
-    # one_d_cnn_model = Model(inputs=input_temp, outputs=main_output)
-
-    # model = Model(inputs=[input_1, input_2], outputs=main_output)
-
-    one_d_cnn_model = one_dcnn_baseline(n_filters, kernel_size, sample_array, initializer)
-    # one_d_cnn_model = one_dcnn_cmapss(sample_array)
-
-    print(one_d_cnn_model.summary())
-    # one_d_cnn_model.compile(loss='mean_squared_error', optimizer=amsgrad, metrics=[rmse, 'mae'])
-
-
-    start = time.time()
-
-    lr_scheduler = LearningRateScheduler(scheduler)
-
-    one_d_cnn_model.compile(loss='mean_squared_error', optimizer=amsgrad, metrics='mae')
-    history = one_d_cnn_model.fit(sample_array, label_array, epochs=ep, batch_size=bs, validation_split=vs, verbose=2,
-                      callbacks = [lr_scheduler, EarlyStopping(monitor='val_loss', min_delta=0, patience=pt, verbose=1, mode='min'),
-                                    ModelCheckpoint(model_temp_path, monitor='val_loss', save_best_only=True, mode='min', verbose=1)]
-                      )
-    # TqdmCallback(verbose=2)
-    # one_d_cnn_model.save(tf_temp_path,save_format='tf')
-    figsave(history, win_len, win_stride, bs, lr, sub)
-
-    print("The FLOPs is:{}".format(get_flops(one_d_cnn_model)), flush=True)
-    num_train = sample_array.shape[0]
-    end = time.time()
-    training_time = end - start
-    print("Training time: ", training_time)
-
-
     ### Test (inference after training)
     start = time.time()
 
@@ -370,6 +288,7 @@ def main():
 
     end = time.time()
     inference_time = end - start
+    print ("inference_time", inference_time)
     num_test = output_array.shape[0]
 
 

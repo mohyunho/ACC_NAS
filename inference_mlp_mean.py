@@ -253,6 +253,8 @@ def main():
     train_units_samples_lst =[]
     train_units_labels_lst = []
 
+    start =time.time()
+
     for index in units_index_train:
         print("Load data index: ", index)
         sample_array, label_array = load_array (sample_dir_path, index, win_len, win_stride, sampling)
@@ -328,6 +330,18 @@ def main():
     end = time.time()
     inference_time = end - start
     num_test = output_array.shape[0]
+
+    h_array = output_array - trytg_array
+    # print (h_array)
+    s_array = np.zeros(len(h_array))
+    for j, h_j in enumerate(h_array):
+        if h_j < 0:
+            s_array[j] = math.exp(-(h_j / 13)) - 1
+        else:
+            s_array[j] = math.exp(h_j / 10) - 1
+
+    score = np.sum(s_array)
+    print ("score", score)
 
 
 

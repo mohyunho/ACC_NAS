@@ -355,6 +355,21 @@ def main():
     inference_time = end - start
     num_test = output_array.shape[0]
 
+
+    h_array = output_array - trytg_array
+    # print (h_array)
+    s_array = np.zeros(len(h_array))
+    for j, h_j in enumerate(h_array):
+        if h_j < 0:
+            s_array[j] = math.exp(-(h_j / 13)) - 1
+        else:
+            s_array[j] = math.exp(h_j / 10) - 1
+
+    score = np.sum(s_array)
+    print ("score", score)
+
+
+
     for idx in range(len(units_index_test)):
         fig_verify = plt.figure(figsize=(24, 10))
         plt.plot(output_lst[idx], color="green")
@@ -378,6 +393,7 @@ def main():
     print("# Inference samples: ", num_test)
     print("Training time: ", training_time)
     print("Inference time: ", inference_time)
+    print ("score", score)
     print("Result in RMSE: ", rms)
 
 

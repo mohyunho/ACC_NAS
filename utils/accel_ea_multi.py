@@ -16,7 +16,7 @@ import os
 import pandas as pd
 import copy
 
-from utils.cnn_task import Task
+from utils.accel_cnn_task import Task
 
 # os.remove("logbook.pkl")
 
@@ -225,19 +225,9 @@ def eaSimple(population, toolbox, cxpb, mutpb, ngen, sel_op, stats=None,
                     redundant.append(ind)
                 else:
                     to_evaluate.append(ind)
-
             invalid_ind = to_evaluate
 
-            # Evaluate architecture scores
-            # Split 'invalid_ind' into 'good_ind' and 'bad_ind'
-
-            # Estimate and assign fitness (RMSE)  for bad_ind using look up table
-
-
-            # Evaluate fitness for good_ind
             fitnesses = toolbox.map(toolbox.evaluate, invalid_ind)
-
-            # Assign fitness
             for ind, fit in zip(invalid_ind, fitnesses):
                 ind.fitness.values = fit
                 individual_map[str(ind)] = fit

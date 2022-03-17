@@ -328,7 +328,7 @@ def main():
     print (len(test_sample_array))
 
     rms_lst =[]
-
+    score_lst = []
     
 
     for r in range(10):
@@ -345,9 +345,28 @@ def main():
         print ("rms", rms)
         rms_lst.append(rms)
 
+
+        h_array = rnd_rul - test_label_array
+        # print (h_array)
+        s_array = np.zeros(len(h_array))
+        for j, h_j in enumerate(h_array):
+            if h_j < 0:
+                s_array[j] = math.exp(-(h_j / 13)) - 1
+            else:
+                s_array[j] = math.exp(h_j / 10) - 1
+
+        score = np.sum(s_array)
+        score_lst.append(score)
+
+
+
     print (rms_lst)
     avg = sum(rms_lst) / len(rms_lst)
     print ("avg", avg)
+
+    print (score_lst)
+    avg_score = sum(score_lst) / len(score_lst)
+    print ("avg_score", avg_score)
 
 
     test_label_avg = sum(test_label_array) / len(test_label_array)
@@ -358,6 +377,8 @@ def main():
     print(rms)
     rms = round(rms, 2)
     print ("rms", rms)
+
+
 
 
 if __name__ == '__main__':
