@@ -73,7 +73,7 @@ from pygmo import *
 import cvxpy as cp
 from scipy.optimize import curve_fit
 
-from tensorflow.python.framework.convert_to_constants import  convert_variables_to_constants_v2_as_graph
+# from tensorflow.python.framework.convert_to_constants import  convert_variables_to_constants_v2_as_graph
 
 from tensorflow.keras.initializers import GlorotNormal, GlorotUniform
 
@@ -261,17 +261,7 @@ def figsave(history, win_len, win_stride, bs, lr, sub):
 
 
 
-def get_flops(model):
-    concrete = tf.function(lambda inputs: model(inputs))
-    concrete_func = concrete.get_concrete_function(
-        [tf.TensorSpec([1, *inputs.shape[1:]]) for inputs in model.inputs])
-    frozen_func, graph_def = convert_variables_to_constants_v2_as_graph(concrete_func)
-    with tf.Graph().as_default() as graph:
-        tf.graph_util.import_graph_def(graph_def, name='')
-        run_meta = tf.compat.v1.RunMetadata()
-        opts = tf.compat.v1.profiler.ProfileOptionBuilder.float_operation()
-        flops = tf.compat.v1.profiler.profile(graph=graph, run_meta=run_meta, cmd="op", options=opts)
-        return flops.total_float_ops
+
 
 
 
@@ -342,13 +332,12 @@ def main():
     n_generations = args.gen
 
 
+    log_filename = 'mute_log_%s_%s_%s_%s_%s_%s.csv'  %(ablation, pop_size, n_generations, obj, trial, ob_ep)
+
+    mutlog_df = pd.read_csv(os.path.join(log_dir_path, log_filename))
 
 
-
-    prft_filename = 'prft_out_%s_%s_%s_%s_%s.csv'  %(ablation, pop_size, n_generations, trial, ob_ep)
-
-    prft_log_df = pd.read_csv(os.path.join(log_dir_path, prft_filename), header=0, names=["p1", 'p2', 'p3', 'p4'])
-
+    prft_log_df = mutlog_df.loc[mutlog_df['gen']==0]
 
     # mutate_filename = os.path.join(log_dir_path, 'mute_log_%s_%s_%s_%s_%s_%s.csv' % (ablation, pop_size, n_generations, obj, trial, ep))
 
@@ -454,10 +443,10 @@ def main():
 
         
 
-        n_layers = int(row['p1'] )
-        n_filters = int(row['p2'] ) 
-        kernel_size = int(row['p3'])  
-        n_mlp = int(row['p4'] ) *10
+        n_layers = int(row['params_1'] )
+        n_filters = int(row['params_2'] ) 
+        kernel_size = int(row['params_3'])  
+        n_mlp = int(row['params_4'] ) *10
         one_d_cnn_model = one_dcnn(n_layers, n_filters, kernel_size, n_mlp, train_sample_array, initializer)
 
         geno_lst = [n_layers, n_filters, kernel_size, n_mlp]
@@ -497,7 +486,7 @@ def main():
         # one_d_cnn_model.save(tf_temp_path,save_format='tf')
         figsave(history, win_len, win_stride, bs, lr, sub)
 
-        print("The FLOPs is:{}".format(get_flops(one_d_cnn_model)), flush=True)
+        # print("The FLOPs is:{}".format(get_flops(one_d_cnn_model)), flush=True)
         num_train = train_sample_array.shape[0]
         end = time.time()
         training_time = end - start
@@ -728,10 +717,10 @@ def main():
     
     prft_infer_df = pd.DataFrame([])
 
-    prft_infer_df['p1']  = prft_log_df['p1'].values
-    prft_infer_df['p2']  = prft_log_df['p2'].values
-    prft_infer_df['p3']  = prft_log_df['p3'].values
-    prft_infer_df['p4']  = prft_log_df['p4'].values
+    prft_infer_df['p1']  = prft_log_df['params_1'].values
+    prft_infer_df['p2']  = prft_log_df['params_2'].values
+    prft_infer_df['p3']  = prft_log_df['params_3'].values
+    prft_infer_df['p4']  = prft_log_df['params_4'].values
 
     print ("last_gen_numparams_lst", last_gen_numparams_lst)
 
@@ -748,14 +737,16 @@ def main():
     print ("BEST ind test score", min(last_gen_score_lst))
     print ("Average test score", statistics.mean(last_gen_score_lst) )
 
-    output_filepath = os.path.join(log_dir_path, 'inference_prft_%s_%s_%s_%s_%s_%s.csv' % (ablation, pop_size, n_generations, obj, trial, ob_ep))
+    output_filepath = os.path.join(log_dir_path, 'inference_prft_%s_%s_0_%s_%s_%s.csv' % (ablation, pop_size,  obj, trial, ob_ep))
     prft_infer_df.to_csv(output_filepath, index=False)
 
 
     print ("points_val", points_val)
     print ("points_test", points_test)
+    print ("csv saved")
 
-    ref = [15.0, 20.0]
+    ref = [15.0, 15.0]
+
 
     hv_val = hypervolume(points = points_val)
     result_val = hv_val.compute(ref_point = ref)
@@ -765,128 +756,6 @@ def main():
     result_test = hv_test.compute(ref_point = ref)
     print ("hypervolume_test", result_test)
 
-
-
-#####################################################
-
-    initial_pop_df = pd.read_csv(os.path.join(log_dir_path, 'inference_prft_extpl_%s_0_moo_%s_%s.csv' %(pop_size, trial, ob_ep)))
-    initial_pop_val = initial_pop_df['val_rmse'].values
-    initial_pop_params = initial_pop_df['num_params'].values
-    initial_pop_rmse = initial_pop_df['RMSE'].values
-
-
-################### pareto front plot ###############
-    # Draw scatter plot
-    fig = matplotlib.figure.Figure(figsize=(5, 5))
-    agg.FigureCanvasAgg(fig)
-    # cmap = get_cmap(10)
-    ax = fig.add_subplot(1, 1, 1)
-    # Draw scatter plot
-
-    prft_rmse = prft_infer_df['val_rmse'].values
-    prft_params = prft_infer_df['num_params'].values 
-    print ("prft_val_rmse", prft_rmse)
-    print ("prft_params", prft_params)
-
-    # x_min = int(min(prft_rmse)) - 0.5
-    # x_max = int(max(prft_rmse)) + 0.5
-    # x_sp = 0.25
-    # x_range = np.arange(x_min, x_max, 2 * x_sp)
-
-    # ax.scatter(mute_log_df['fitness_1'], mute_log_df['test_rmse'], facecolor=(1.0, 1.0, 0.4), edgecolors=(0.0, 0.0, 0.0), zorder=1,
-    #            c=cmap(0), s=20 )
-
-    ax.scatter(prft_rmse, prft_params, facecolor=(1.0, 1.0, 0.4),
-               edgecolors=(0.0, 0.0, 0.0), zorder=3, s=60,  label="Solutions" )
-
-    ax.scatter(initial_pop_val, initial_pop_params, facecolor=(0.0, 0.5, 0.0),
-               edgecolors=(0.0, 0.0, 0.0), zorder=1, s=40,  label="Initial population" )
-
-    ax.scatter(8.03, 1.6126, marker="D",facecolor=(0.0, 1.0, 0.0), edgecolors=(0.0, 0.0, 0.0), zorder=4,
-           s=60, label="Handcrafted CNN")
-
-    x_range = np.arange(5.0, 15.5, 0.5)
-    ax.set_xticks(x_range)
-    ax.set_xticklabels(x_range, rotation=60)
-    ax.set_xlim(5, 16)
-
-    y_range = np.arange(0, 21, 1)
-    ax.set_yticks(y_range)
-    ax.set_yticklabels(y_range)
-    ax.set_ylim(0, 21)
-
-
-    # ax.set_xlim(x_min, x_max)
-    # ax.set_ylim(y_min, y_max)
-    # ax.set_title("Solutions and pareto front", fontsize=15)
-    ax.set_xlabel('Validation RMSE', fontsize=12)
-    ax.set_ylabel(r'Trainable parameters $\times$ ($10^4$)', fontsize=12)
-    ax.legend(fontsize=10, loc='center right')
-
-    # Save figure
-    # ax.set_rasterized(True)
-    fig.savefig(os.path.join(pic_dir, 'infer_prft_val_%s_%s_%s_%s_%s.png' % (ablation, pop_size, n_generations, trial, ob_ep)), dpi=1500, bbox_inches='tight')
-    # fig.savefig(os.path.join(pic_dir, 'val_score_%s_%s_%s.eps' % (pop, gen, trial)), dpi=1500, bbox_inches='tight')
-    # fig.savefig(os.path.join(pic_dir, 'val_score_%s_%s_%s.pdf' % (pop, gen, trial)), bbox_inches='tight')
-
-##############################################
-
-    # Draw scatter plot
-    fig = matplotlib.figure.Figure(figsize=(5, 5))
-    agg.FigureCanvasAgg(fig)
-    # cmap = get_cmap(10)
-    ax = fig.add_subplot(1, 1, 1)
-    # Draw scatter plot
-
-    prft_rmse = prft_infer_df['RMSE'].values
-    prft_params = prft_infer_df['num_params'].values
-    
-
-    # x_min = int(min(prft_rmse)) - 0.5
-    # x_max = int(max(prft_rmse)) + 0.5
-    # x_sp = 0.25
-    # x_range = np.arange(x_min, x_max, 2 * x_sp)
-
-    # ax.scatter(mute_log_df['fitness_1'], mute_log_df['test_rmse'], facecolor=(1.0, 1.0, 0.4), edgecolors=(0.0, 0.0, 0.0), zorder=1,
-    #            c=cmap(0), s=20 )
-
-    ax.scatter(prft_rmse, prft_params, facecolor=(1.0, 1.0, 0.4),
-               edgecolors=(0.0, 0.0, 0.0), zorder=3, s=60,  label="Solutions" )
-
-    ax.scatter(initial_pop_rmse, initial_pop_params, facecolor=(0.0, 0.5, 0.0),
-               edgecolors=(0.0, 0.0, 0.0), zorder=1, s=40,  label="Initial population" )
-
-    ax.scatter(7.49, 1.6126, marker="D",facecolor=(0.0, 1.0, 0.0), edgecolors=(0.0, 0.0, 0.0), zorder=4,
-           s=60, label="Handcrafted CNN")
-
-
-    x_range = np.arange(5.0, 15.5, 0.5)
-    ax.set_xticks(x_range)
-    ax.set_xticklabels(x_range, rotation=60)
-    ax.set_xlim(5, 16)
-
-    y_range = np.arange(0, 21, 1)
-    ax.set_yticks(y_range)
-    ax.set_yticklabels(y_range)
-    ax.set_ylim(0, 21)
-
-
-    # ax.set_xlim(x_min, x_max)
-    # ax.set_ylim(y_min, y_max)
-    # ax.set_title("Solutions and pareto front", fontsize=15)
-    ax.set_xlabel('Test RMSE', fontsize=12)
-    ax.set_ylabel(r'Trainable parameters $\times$ ($10^4$)', fontsize=12)
-    ax.legend(fontsize=10, loc='center right')
-
-    # Save figure
-    # ax.set_rasterized(True)
-    fig.savefig(os.path.join(pic_dir, 'infer_prft_test_%s_%s_%s_%s_%s.png' % (ablation, pop_size, n_generations, trial, ob_ep)), dpi=1500, bbox_inches='tight')
-    # fig.savefig(os.path.join(pic_dir, 'val_score_%s_%s_%s.eps' % (pop, gen, trial)), dpi=1500, bbox_inches='tight')
-    # fig.savefig(os.path.join(pic_dir, 'val_score_%s_%s_%s.pdf' % (pop, gen, trial)), bbox_inches='tight')
-
-
-
-######################################
 
 
 if __name__ == '__main__':

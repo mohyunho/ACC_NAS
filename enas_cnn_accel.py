@@ -40,7 +40,7 @@ data_filedir = os.path.join(current_dir, 'N-CMAPSS')
 data_filepath = os.path.join(current_dir, 'N-CMAPSS', 'N-CMAPSS_DS02-006.h5')
 sample_dir_path = os.path.join(data_filedir, 'Samples_whole')
 
-model_temp_path = os.path.join(current_dir, 'Models', 'oned_cnn_rep.h5')
+model_temp_path = os.path.join(current_dir, 'Models', 'oned_cnn_rep_accel.h5')
 tf_temp_path = os.path.join(current_dir, 'TF_Model_tf')
 
 pic_dir = os.path.join(current_dir, 'Curves')
@@ -163,6 +163,7 @@ def main():
     parser.add_argument('--device', type=str, default="GPU", help='Use "basic" if GPU with cuda is not available')
     parser.add_argument('--obj', type=str, default="soo", help='Use "soo" for single objective and "moo" for multiobjective')
     parser.add_argument('-obep', type=int, default=15, help='number of epoch observation before extrapolation')
+    parser.add_argument('-start', type=int, default=0, help='')
 
     args = parser.parse_args()
 
@@ -180,6 +181,7 @@ def main():
     device = args.device
     obj = args.obj
     trial = args.t
+    st_ep = args.start
 
     # random seed predictable
     jobs = 1
@@ -260,7 +262,7 @@ def main():
             'mut_gene_probability': 0.3  # 0.1
         }
 
-        mutate_log_path = 'EA_log/mute_log_extpl_%s_%s_%s_%s_%s.csv' % (pop_size, n_generations, obj, trial, ep)
+        mutate_log_path = 'EA_log/mute_log_extpl_%s_%s_%s_%s_%s.csv' % (pop_size, n_generations, obj, trial, ob_ep)
         mutate_log_col = ['idx', 'params_1', 'params_2', 'params_3', 'params_4', 'fitness_1',
                           'gen']
         mutate_log_df = pd.DataFrame(columns=mutate_log_col, index=None)
@@ -290,7 +292,7 @@ def main():
             'mut_gene_probability': 0.4  # 0.1
         }
 
-        mutate_log_path = 'EA_log/mute_log_extpl_%s_%s_%s_%s_%s.csv' % (pop_size, n_generations, obj, trial, ep)
+        mutate_log_path = 'EA_log/mute_log_extpl_%s_%s_%s_%s_%s.csv' % (pop_size, n_generations, obj, trial, ob_ep)
         mutate_log_col = ['idx', 'params_1', 'params_2', 'params_3', 'params_4', 
                           'fitness_1', 'fitness_2', 'hypervolume', 'gen']
         mutate_log_df = pd.DataFrame(columns=mutate_log_col, index=None)
@@ -319,7 +321,7 @@ def main():
 
 
 
-    prft_path = os.path.join(directory_path, 'prft_out_extpl_%s_%s_%s_%s.csv' % (pop_size, n_generations, trial, ep))
+    prft_path = os.path.join(directory_path, 'prft_out_extpl_%s_%s_%s_%s.csv' % (pop_size, n_generations, trial, ob_ep))
 
 
 
@@ -337,6 +339,7 @@ def main():
         batch=bs,
         epoch = ep,
         ob_ep = ob_ep,
+        st_ep = st_ep,
         patience = pt,
         val_split = vs,
         model_path = model_temp_path,

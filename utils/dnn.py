@@ -58,7 +58,7 @@ def one_dcnn_baseline(n_filters, kernel_size, input_array, initializer):
     cnn.add(Conv1D(filters=n_filters, kernel_size=kernel_size, kernel_initializer=initializer, padding='same'))
     # cnn.add(BatchNormalization())
     cnn.add(Activation('relu'))
-    cnn.add(Conv1D(filters=n_filters, kernel_size=kernel_size, kernel_initializer=initializer, padding='same'))
+    cnn.add(Conv1D(filters=5, kernel_size=kernel_size, kernel_initializer=initializer, padding='same'))
     # cnn.add(BatchNormalization())
     cnn.add(Activation('relu'))
     cnn.add(Flatten())
@@ -108,7 +108,7 @@ def one_dcnn(n_layers, n_filters, kernel_size, n_mlp, input_array, initializer):
         cnn.add(Activation('relu', name="relu_1"))
         for loop in range(n_layers-1):
             if loop == n_layers-2:
-                cnn.add(Conv1D(filters=1, kernel_size=kernel_size, kernel_initializer=initializer, padding='same'))
+                cnn.add(Conv1D(filters=5, kernel_size=kernel_size, kernel_initializer=initializer, padding='same'))
                 # cnn.add(Conv1D(filters=n_filters, kernel_size=kernel_size, kernel_initializer=initializer, padding='same'))
             else:
                 cnn.add(Conv1D(filters=n_filters, kernel_size=kernel_size, kernel_initializer=initializer, padding='same'))

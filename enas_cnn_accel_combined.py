@@ -1,9 +1,14 @@
+'''
+Created on Nov , 2021
+@author:
+'''
+
+## Import libraries in python
 import argparse
 import time
 import json
 import logging
 import sys
-import glob
 import os
 import math
 import pandas as pd
@@ -13,7 +18,8 @@ import seaborn as sns
 import random
 import importlib
 from scipy.stats import randint, expon, uniform
-from tqdm import tqdm
+import glob
+import tensorflow as tf
 import sklearn as sk
 from sklearn import svm
 from sklearn.utils import shuffle
@@ -21,53 +27,29 @@ from sklearn import metrics
 from sklearn import preprocessing
 from sklearn import pipeline
 from sklearn.metrics import mean_squared_error
-
 from math import sqrt
-# import keras
-np.random.seed(0)
 
-import tensorflow as tf
-print(tf.__version__)
-# import keras.backend as K
-# import tensorflow.keras.backend as K
+# from utils.accel_cnn_network import network_fit
+from utils.accel_cnn_task_combined import SimpleNeuroEvolutionTask
+from utils.accel_ea_multi_combined import GeneticAlgorithm
 
 
-
-from tensorflow.keras import backend
-from tensorflow.keras import optimizers
-from tensorflow.keras.models import Sequential, load_model, Model
-from tensorflow.keras.layers import Input, Dense, Flatten, Dropout, Embedding
-from tensorflow.keras.layers import BatchNormalization, Activation, LSTM, TimeDistributed, Bidirectional
-from tensorflow.keras.layers import Conv1D
-from tensorflow.keras.layers import MaxPooling1D
-from tensorflow.keras.layers import concatenate
-from tensorflow.keras.callbacks import EarlyStopping, ModelCheckpoint, LearningRateScheduler
-from tensorflow.python.framework.convert_to_constants import  convert_variables_to_constants_v2_as_graph
-from tensorflow.keras.initializers import GlorotNormal, GlorotUniform
-
-from utils.dnn import one_dcnn
-from utils.archt_scoring import scorefunc_slogdet, tf_net_kmatrix
-
-
-
-
-
-# Ignore tf err log
-pd.options.mode.chained_assignment = None  # default='warn'
 
 current_dir = os.path.dirname(os.path.abspath(__file__))
 data_filedir = os.path.join(current_dir, 'N-CMAPSS')
 data_filepath = os.path.join(current_dir, 'N-CMAPSS', 'N-CMAPSS_DS02-006.h5')
 sample_dir_path = os.path.join(data_filedir, 'Samples_whole')
 
-model_temp_path = os.path.join(current_dir, 'Models', 'oned_cnn_rep.h5')
+model_temp_path = os.path.join(current_dir, 'Models', 'oned_cnn_rep_accel.h5')
 tf_temp_path = os.path.join(current_dir, 'TF_Model_tf')
 
-pic_dir = os.path.join(current_dir, 'Figures')
+pic_dir = os.path.join(current_dir, 'Curves')
+if not os.path.exists(pic_dir):
+    os.makedirs(pic_dir)
+
 
 # directory_path = current_dir + '/EA_log'
 directory_path = os.path.join(current_dir, 'EA_log')
-
 
 '''
 load array from npz files
@@ -102,26 +84,6 @@ def load_array (sample_dir_path, unit_num, win_len, stride):
 
     return loaded['sample'].transpose(2, 0, 1), loaded['label']
 
-def rmse(y_true, y_pred):
-    return backend.sqrt(backend.mean(backend.square(y_pred - y_true), axis=-1))
-
-def train_params_count(model):
-    trainableParams = np.sum([np.prod(v.get_shape()) for v in model.trainable_weights])
-    return trainableParams
-
-
-def get_flops(model):
-    concrete = tf.function(lambda inputs: model(inputs))
-    concrete_func = concrete.get_concrete_function(
-        [tf.TensorSpec([1, *inputs.shape[1:]]) for inputs in model.inputs])
-    frozen_func, graph_def = convert_variables_to_constants_v2_as_graph(concrete_func)
-    with tf.Graph().as_default() as graph:
-        tf.graph_util.import_graph_def(graph_def, name='')
-        run_meta = tf.compat.v1.RunMetadata()
-        opts = tf.compat.v1.profiler.ProfileOptionBuilder.float_operation()
-        flops = tf.compat.v1.profiler.profile(graph=graph, run_meta=run_meta, cmd="op", options=opts)
-        return flops.total_float_ops
-
 
 def shuffle_array(sample_array, label_array):
     ind_list = list(range(len(sample_array)))
@@ -134,6 +96,33 @@ def shuffle_array(sample_array, label_array):
     shuffle_sample = sample_array[ind_list, :, :]
     shuffle_label = label_array[ind_list,]
     return shuffle_sample, shuffle_label
+
+def figsave(history, h1,h2,h3,h4, bs, lr, sub):
+    fig_acc = plt.figure(figsize=(15, 8))
+    plt.plot(history.history['loss'])
+    plt.plot(history.history['val_loss'])
+    plt.title('Training', fontsize=24)
+    plt.ylabel('loss', fontdict={'fontsize': 18})
+    plt.xlabel('epoch', fontdict={'fontsize': 18})
+    plt.legend(['Training loss', 'Validation loss'], loc='upper left', fontsize=18)
+    plt.show()
+    print ("saving file:training loss figure")
+    fig_acc.savefig(pic_dir + "/elm_enas_training_h1%s_h2%s_h3%s_h4%s_bs%s_sub%s_lr%s.png" %(int(h1), int(h2), int(h3), int(h4), int(bs), int(sub), str(lr)))
+    return
+
+
+def score_calculator(y_predicted, y_actual):
+    # Score metric
+    h_array = y_predicted - y_actual
+    s_array = np.zeros(len(h_array))
+    for j, h_j in enumerate(h_array):
+        if h_j < 0:
+            s_array[j] = math.exp(-(h_j / 13)) - 1
+
+        else:
+            s_array[j] = math.exp(h_j / 10) - 1
+    score = np.sum(s_array)
+    return score
 
 
 def release_list(a):
@@ -155,26 +144,27 @@ units_index_train = [2.0, 5.0, 10.0, 16.0, 18.0, 20.0]
 units_index_test = [11.0, 14.0, 15.0]
 
 
-initializer = GlorotNormal(seed=0)
-# initializer = GlorotUniform(seed=0)
 
 
 def main():
     # current_dir = os.path.dirname(os.path.abspath(__file__))
     parser = argparse.ArgumentParser(description='NAS CNN')
     parser.add_argument('-w', type=int, default=50, help='sequence length', required=True)
-    parser.add_argument('-s', type=int, default=1, help='stride of filter')
+    parser.add_argument('-s', type=int, default=50, help='stride of filter')
     parser.add_argument('-bs', type=int, default=512, help='batch size')
     parser.add_argument('-ep', type=int, default=30, help='max epoch')
-    parser.add_argument('-pt', type=int, default=20, help='patience')
-    parser.add_argument('-vs', type=float, default=0.1, help='validation split')
-    parser.add_argument('-lr', type=float, default=0.001, help='learning rate')
+    parser.add_argument('-pt', type=int, default=30, help='patience')
+    parser.add_argument('-vs', type=float, default=0.2, help='validation split')
+    parser.add_argument('-lr', type=float, default=10**(-1*4), help='learning rate')
     parser.add_argument('-sub', type=int, default=1, help='subsampling stride')
     parser.add_argument('-t', type=int, required=True, help='trial')
     parser.add_argument('--pop', type=int, default=50, required=False, help='population size of EA')
     parser.add_argument('--gen', type=int, default=50, required=False, help='generations of evolution')
+    parser.add_argument('--thres', type=int, default=2, required=False, help='threshold no. params for training')
     parser.add_argument('--device', type=str, default="GPU", help='Use "basic" if GPU with cuda is not available')
-    parser.add_argument('--obj', type=str, default="moo", help='Use "soo" for single objective and "moo" for multiobjective')
+    parser.add_argument('--obj', type=str, default="soo", help='Use "soo" for single objective and "moo" for multiobjective')
+    parser.add_argument('-obep', type=int, default=15, help='number of epoch observation before extrapolation')
+    parser.add_argument('-start', type=int, default=0, help='')
 
     args = parser.parse_args()
 
@@ -184,6 +174,7 @@ def main():
     lr = args.lr
     bs = args.bs
     ep = args.ep
+    ob_ep = args.obep
     pt = args.pt
     vs = args.vs
     sub = args.sub
@@ -191,14 +182,12 @@ def main():
     device = args.device
     obj = args.obj
     trial = args.t
-
-    pop = args.pop
-    gen = args.gen
+    st_ep = args.start
+    th = args.thres
 
     # random seed predictable
     jobs = 1
-    # seed = trial
-    seed = 0
+    seed = trial
     random.seed(seed)
     np.random.seed(seed)
     tf.random.set_seed(seed)
@@ -258,88 +247,142 @@ def main():
     print ("val_sample_array.shape", val_sample_array.shape)
     print ("val_label_array.shape", val_label_array.shape)
 
-
     sample_array = []
     label_array = []
-######################################
 
-##### Load save individuals and generate phenotype
-    log_file = os.path.join(directory_path, 'mute_log_%s_%s_soo_%s.csv' %(pop,gen,trial))
-    mute_log_df = pd.read_csv(log_file)
+    ## Parameters for the GA
+    pop_size = args.pop
+    n_generations = args.gen
+    cx_prob = 0.5  # 0.25
+    mut_prob = 0.5  # 0.7
+    cx_op = "one_point"
+    mut_op = "uniform"
 
-    # lst
-    train_params = []
-    train_time = []
-    archt_scores = []
+    if obj == "soo":
+        sel_op = "best"
+        other_args = {
+            'mut_gene_probability': 0.3  # 0.1
+        }
 
+        mutate_log_path = 'EA_log/mute_log_combined_%s_%s_%s_%s_%s_%s.csv' % (pop_size, n_generations, obj, trial, ob_ep, th)
+        mutate_log_col = ['idx', 'params_1', 'params_2', 'params_3', 'params_4', 'fitness_1',
+                          'gen']
+        mutate_log_df = pd.DataFrame(columns=mutate_log_col, index=None)
+        mutate_log_df.to_csv(mutate_log_path, index=False)
 
+        def log_function(population, gen, hv=None, mutate_log_path=mutate_log_path):
+            for i in range(len(population)):
+                indiv = population[i]
+                if indiv == []:
+                    "non_mutated empty"
+                    pass
+                else:
+                    # print ("i: ", i)
+                    indiv.append(indiv.fitness.values[0])
+                    indiv.append(gen)
 
-    # Iterows
-
-    # for index, ind in mute_log_df.iterrows():
-    for index, ind in tqdm(mute_log_df.iterrows(), total=mute_log_df.shape[0]):
-        print (ind['params_1'], ind['params_2'], ind['params_3'], ind['params_4'])
-        n_layers = int(ind['params_1'])
-        n_filters = int(ind['params_2'])
-        kernel_size = int(ind['params_3'])
-        n_mlp = 10 * int(ind['params_4'])
-        lr = 10**(-1*4)
-
-
-###################
-        print ("n_layers: ", n_layers)
-        print("n_filters: ", n_filters)
-        print("kernel_size: ", kernel_size)
-        print("n_mlp: ", n_mlp)
-        print("lr: ", lr)
-
-
-        model = one_dcnn(n_layers, n_filters, kernel_size, n_mlp, train_sample_array, initializer)
-
-        # print("Initializing network...")
-        start_itr = time.time()
-        ###### Calculate score #############
-
-        # Calculate model's score
-
-        kmatrix = tf_net_kmatrix(model, bs, train_sample_array)
-
-        print ("output kmatrix: ", kmatrix)
-
-        sign, archt_score = scorefunc_slogdet (kmatrix)
-        if int(sign) == 0:
-            archt_score = 0
-
-        print ("sign", sign)
-        print ("archt_score", archt_score)
+            temp_df = pd.DataFrame(np.array(population), index=None)
+            temp_df.to_csv(mutate_log_path, mode='a', header=None)
+            print("population saved")
+            return
 
 
-        ####################################
+    # elif obj == "moo":
+    else:
+        sel_op = "nsga2"
+        other_args = {
+            'mut_gene_probability': 0.4  # 0.1
+        }
+
+        mutate_log_path = 'EA_log/mute_log_combined_%s_%s_%s_%s_%s_%s.csv' % (pop_size, n_generations, obj, trial, ob_ep, th)
+        mutate_log_col = ['idx', 'params_1', 'params_2', 'params_3', 'params_4', 
+                          'fitness_1', 'fitness_2', 'hypervolume', 'gen']
+        mutate_log_df = pd.DataFrame(columns=mutate_log_col, index=None)
+        mutate_log_df.to_csv(mutate_log_path, index=False)
+
+        def log_function(population, gen, hv=None, mutate_log_path=mutate_log_path):
+            for i in range(len(population)):
+                indiv = population[i]
+                if indiv == []:
+                    "non_mutated empty"
+                    pass
+                else:
+                    # print ("i: ", i)
+                    indiv.append(indiv.fitness.values[0])
+                    indiv.append(indiv.fitness.values[1])
+                    # append val_rmse
+                    indiv.append(hv)
+                    indiv.append(gen)
+
+            temp_df = pd.DataFrame(np.array(population), index=None)
+            temp_df.to_csv(mutate_log_path, mode='a', header=None)
+            print("population saved")
+            return
 
 
-        end_itr = time.time()
-        training_time = end_itr - start_itr
-        num_tran_params = train_params_count(model)
-        # flop = get_flops(model)
-        print ("Caluclation time: ", training_time)
-        # test_rmse.append(rms)
-        # flops.append(flop)
-        train_params.append(num_tran_params)
-        train_time.append(training_time)
-        archt_scores.append(archt_score)
 
 
 
-########
-    # append columns
-    mute_log_df['train_params'] = train_params
-    mute_log_df['archt_scores'] = archt_scores
+    prft_path = os.path.join(directory_path, 'prft_out_combined_%s_%s_%s_%s_%s.csv' % (pop_size, n_generations, trial, ob_ep, th))
 
-    # Save to csv
-    new_file_path = os.path.join(directory_path, 'mute_log_%s_%s_%s_soo_%s_score.csv' %(pop,gen,bs,trial))
-    mute_log_df.to_csv(new_file_path, index=False)
 
-    print ("Score results are saved")
+
+
+
+
+    start = time.time()
+
+    # Assign & run EA
+    task = SimpleNeuroEvolutionTask(
+        train_sample_array = train_sample_array,
+        train_label_array = train_label_array,
+        val_sample_array = val_sample_array,
+        val_label_array = val_label_array,
+        batch=bs,
+        epoch = ep,
+        ob_ep = ob_ep,
+        st_ep = st_ep,
+        patience = pt,
+        val_split = vs,
+        threshold = th,
+        model_path = model_temp_path,
+        device = device,
+        obj = obj
+    )
+
+    ga = GeneticAlgorithm(
+        batch_size=bs, 
+        train_sample_array=train_sample_array,
+        task=task,
+        population_size=pop_size,
+        n_generations=n_generations,
+        cx_probability=cx_prob,
+        mut_probability=mut_prob,
+        crossover_operator=cx_op,
+        mutation_operator=mut_op,
+        selection_operator=sel_op,
+        jobs=jobs,
+        log_function=log_function,
+        prft_path=prft_path,
+        **other_args
+    )
+
+    pop, log, hof, prtf = ga.run()
+
+    print("Best individual:")
+    print(hof[0])
+    print(prtf)
+
+
+    print("Best individual is saved")
+    end = time.time()
+    print("EA time: ", end - start)
+    print ("####################  EA COMPLETE / HOF TEST   ##############################")
+
+
+
+
+
 
 if __name__ == '__main__':
     main()

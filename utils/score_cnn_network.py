@@ -40,12 +40,19 @@ from tensorflow.keras.callbacks import EarlyStopping, ModelCheckpoint, LearningR
 # from tensorflow.python.framework.convert_to_constants import  convert_variables_to_constants_v2_as_graph
 from tensorflow.keras.initializers import GlorotNormal, GlorotUniform
 
+from utils.archt_scoring import scorefunc_slogdet, tf_net_kmatrix
+import cupy as cp
+
+# os.environ['TF_DETERMINISTIC_OPS'] = '1'
+os.environ['TF_CUDNN_DETERMINISTIC']='1'
+
 from utils.dnn import one_dcnn
 seed = 0
 random.seed(seed)
 np.random.seed(seed)
 tf.random.set_seed(seed)
 os.environ['TF_DETERMINISTIC_OPS'] = '1'
+
 
 
 # Ignore tf err log
@@ -197,6 +204,68 @@ class network_fit(object):
         with open('train_time_hist.csv', 'a') as fq:
             writer = csv.writer(fq)
             writer.writerow([train_time])   
+
+
+        return val_net, num_tran_params, train_time
+
+    
+    def score_net(self, model, lr, train_sample_array, train_label_array, val_sample_array, val_label_array):
+        '''
+        specify the optimizers and train the network
+        :param epochs:
+        :param batch_size:
+        :param lr:
+        :return:
+        '''
+        print("Initializing network...")
+        start_itr = time.time()
+        keras_rmse = tf.keras.metrics.RootMeanSquaredError()
+
+        ###### Calculate score #############
+
+        # Calculate model's score
+
+        kmatrix = tf_net_kmatrix(model, self.batch, train_sample_array)
+
+        # print ("output kmatrix: ", kmatrix)
+
+        sign, archt_score = scorefunc_slogdet (kmatrix)
+        print ("archt_score", archt_score)
+        if int(sign) == 0:
+            archt_score = 0
+
+        print ("sign", sign)
+        print ("archt_score", archt_score)
+
+        if archt_score == 0:
+            archt_score_inverse = 1000.0
+        else:
+            archt_score_div = archt_score / 10000.0
+            archt_score_inverse = 1/archt_score_div
+
+        if archt_score_inverse <= 0:
+            archt_score_inverse = archt_score_inverse * -1
+
+        print ("archt_score_inverse", archt_score_inverse)
+        archt_score_inverse = cp.asnumpy(archt_score_inverse)
+        archt_score_inverse = float(archt_score_inverse)
+        print ("type(archt_score_inverse)", type(archt_score_inverse))
+
+        ####################################
+
+        archt_score_inverse = round(archt_score_inverse, 6)
+        val_net = (archt_score_inverse,)
+        end_itr = time.time()
+        train_time = end_itr - start_itr
+
+        num_tran_params = train_params_count(model)
+        print("number of trainable parameters: ", num_tran_params )
+        print("training network is successfully completed, time: ", train_time)
+        print("val_net in rmse: ", val_net[0])
+
+
+        model = None
+        del model
 
 
         return val_net, num_tran_params, train_time

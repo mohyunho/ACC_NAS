@@ -279,15 +279,19 @@ def main():
     n_generations = args.gen
 
 
+
+
+
     prft_filename = 'prft_out_%s_%s_%s_%s_%s.csv'  %(ablation, pop_size, n_generations, trial, ep)
 
     prft_log_df = pd.read_csv(os.path.join(log_dir_path, prft_filename), header=0, names=["p1", 'p2', 'p3', 'p4'])
 
 
-    mutate_filename = os.path.join(log_dir_path, 'mute_log_%s_%s_%s_%s_%s_%s.csv' % (ablation, pop_size, n_generations, obj, trial, ep))
+    # mutate_filename = os.path.join(log_dir_path, 'mute_log_%s_%s_%s_%s_%s_%s.csv' % (ablation, pop_size, n_generations, obj, trial, ep))
+    # ea_log_df = pd.read_csv(mutate_filename)
 
     # mutate_filename = 'EA_log/mute_log_%s_%s_%s_%s.csv' % (pop_size, n_generations, obj, trial)
-    ea_log_df = pd.read_csv(mutate_filename)
+
 
     # last_gen_df = ea_log_df.loc[ea_log_df['gen'] == n_generations]
     # print ("last_gen_df", last_gen_df)
@@ -416,7 +420,7 @@ def main():
         #                                 ModelCheckpoint(model_temp_path, monitor='val_loss', save_best_only=True, mode='min', verbose=1)]
         #                 )
 
-        history = one_d_cnn_model.fit(train_sample_array, train_label_array, epochs=ep, batch_size=bs,
+        history = one_d_cnn_model.fit(train_sample_array, train_label_array, epochs=30, batch_size=bs,
                 validation_data=(val_sample_array, val_label_array), verbose=2,
                 callbacks=[lr_scheduler, EarlyStopping(monitor='val_loss', min_delta=0, patience=pt, verbose=1,
                                                     mode='min'),
@@ -499,20 +503,20 @@ def main():
 
         print("Training time: ", training_time)
         print("Inference time: ", inference_time)
-        print("number of trainable parameters: ", num_tran_params )
+        print("number of trainable parameters: ", num_tran_params/ 10000 )
         print ("score", score)
         print("Result in RMSE: ", rms)
 
         last_gen_rmse_lst.append(rms)
         last_gen_score_lst.append(score)
-        last_gen_numparams_lst.append(num_tran_params)
+        last_gen_numparams_lst.append(num_tran_params/ 10000)
         last_gen_traintime_lst.append(training_time)
         last_gen_infertime_lst.append(inference_time)
         last_gen_val_lst.append(val_rmse_hist[-1])
 
         
-        points_val.append([val_rmse_hist[-1], num_tran_params])
-        points_test.append([rms, num_tran_params])
+        points_val.append([val_rmse_hist[-1], num_tran_params/ 10000])
+        points_test.append([rms, num_tran_params/ 10000])
     
     prft_infer_df = pd.DataFrame([])
 
@@ -538,17 +542,42 @@ def main():
     prft_infer_df.to_csv(output_filepath, index=False)
 
 
+
+    ref = [15.0, 20.0]
+
+
+    hv_val = hypervolume(points = points_val)
+    result_val = hv_val.compute(ref_point = ref)
+    print ("hypervolume_validation", result_val)
+
+    hv_test = hypervolume(points = points_test)
+    result_test = hv_test.compute(ref_point = ref)
+    print ("hypervolume_test", result_test)
+
+
+
+
+######################
+    initial_pop_df = pd.read_csv(os.path.join(log_dir_path, 'inference_prft_ori_%s_0_moo_%s_%s.csv' %(pop_size, trial,ep)))
+    initial_pop_val = initial_pop_df['val_rmse'].values
+    initial_pop_params = initial_pop_df['num_params'].values
+    initial_pop_rmse = initial_pop_df['RMSE'].values
+
+
+
+
 ################### pareto front plot ###############
     # Draw scatter plot
-    fig = matplotlib.figure.Figure(figsize=(3, 3))
+    fig = matplotlib.figure.Figure(figsize=(5, 5))
     agg.FigureCanvasAgg(fig)
     # cmap = get_cmap(10)
     ax = fig.add_subplot(1, 1, 1)
     # Draw scatter plot
 
     prft_rmse = prft_infer_df['val_rmse'].values
-    prft_params = prft_infer_df['num_params'].values
+    prft_params = prft_infer_df['num_params'].values 
     
+    print ("prft_params", prft_params)
 
     # x_min = int(min(prft_rmse)) - 0.5
     # x_max = int(max(prft_rmse)) + 0.5
@@ -559,22 +588,30 @@ def main():
     #            c=cmap(0), s=20 )
 
     ax.scatter(prft_rmse, prft_params, facecolor=(1.0, 1.0, 0.4),
-               edgecolors=(0.0, 0.0, 0.0), zorder=1, s=20,  label="Solutions" )
+               edgecolors=(0.0, 0.0, 0.0), zorder=3, s=60,  label="Solutions" )
 
-    ax.scatter(8.23, 5722, marker="D",facecolor=(0.0, 1.0, 0.0), edgecolors=(0.0, 0.0, 0.0), zorder=1,
-           s=60, label="Handcrafted CNN")
+    ax.scatter(initial_pop_val, initial_pop_params, facecolor=(0.0, 0.5, 0.0),
+               edgecolors=(0.0, 0.0, 0.0), zorder=1, s=40,  label="Initial population" )
 
-    x_range = np.arange(5.0, 10.5, 0.5)
+    ax.scatter(8.03, 1.6126, marker="D",facecolor=(0.0, 1.0, 0.0), edgecolors=(0.0, 0.0, 0.0), zorder=4, s=60, label="Handcrafted CNN")
+
+    x_range = np.arange(5.0, 15.5, 0.5)
     ax.set_xticks(x_range)
     ax.set_xticklabels(x_range, rotation=60)
-    # ax.set_yticks(np.arange(y_min, y_max, 2 * y_sp))
-    ax.set_xlim(5, 10)
+    ax.set_xlim(5, 16)
+
+    y_range = np.arange(0, 21, 1)
+    ax.set_yticks(y_range)
+    ax.set_yticklabels(y_range)
+    ax.set_ylim(0, 21)
+
+
     # ax.set_xlim(x_min, x_max)
     # ax.set_ylim(y_min, y_max)
     # ax.set_title("Solutions and pareto front", fontsize=15)
     ax.set_xlabel('Validation RMSE', fontsize=12)
-    ax.set_ylabel('Trainable parameters', fontsize=12)
-    ax.legend(fontsize=8, loc='upper right')
+    ax.set_ylabel(r'Trainable parameters $\times$ ($10^4$)', fontsize=12)
+    ax.legend(fontsize=10, loc='center right')
 
     # Save figure
     # ax.set_rasterized(True)
@@ -585,7 +622,7 @@ def main():
 ##############################################
 
     # Draw scatter plot
-    fig = matplotlib.figure.Figure(figsize=(3, 3))
+    fig = matplotlib.figure.Figure(figsize=(5, 5))
     agg.FigureCanvasAgg(fig)
     # cmap = get_cmap(10)
     ax = fig.add_subplot(1, 1, 1)
@@ -604,22 +641,32 @@ def main():
     #            c=cmap(0), s=20 )
 
     ax.scatter(prft_rmse, prft_params, facecolor=(1.0, 1.0, 0.4),
-               edgecolors=(0.0, 0.0, 0.0), zorder=1, s=20,  label="Solutions" )
+               edgecolors=(0.0, 0.0, 0.0), zorder=3, s=60,  label="Solutions" )
 
-    ax.scatter(8.04, 5722, marker="D",facecolor=(0.0, 1.0, 0.0), edgecolors=(0.0, 0.0, 0.0), zorder=1,
+    ax.scatter(initial_pop_rmse, initial_pop_params, facecolor=(0.0, 0.5, 0.0),
+               edgecolors=(0.0, 0.0, 0.0), zorder=1, s=40,  label="Initial population" )
+
+    ax.scatter(7.49, 1.6126, marker="D",facecolor=(0.0, 1.0, 0.0), edgecolors=(0.0, 0.0, 0.0), zorder=4,
            s=60, label="Handcrafted CNN")
 
-    x_range = np.arange(5.0, 10.5, 0.5)
+
+    x_range = np.arange(5.0, 15.5, 0.5)
     ax.set_xticks(x_range)
     ax.set_xticklabels(x_range, rotation=60)
-    # ax.set_yticks(np.arange(y_min, y_max, 2 * y_sp))
-    ax.set_xlim(5, 10)
+    ax.set_xlim(5, 16)
+
+    y_range = np.arange(0, 21, 1)
+    ax.set_yticks(y_range)
+    ax.set_yticklabels(y_range)
+    ax.set_ylim(0, 21)
+
+
     # ax.set_xlim(x_min, x_max)
     # ax.set_ylim(y_min, y_max)
     # ax.set_title("Solutions and pareto front", fontsize=15)
     ax.set_xlabel('Test RMSE', fontsize=12)
-    ax.set_ylabel('Trainable parameters', fontsize=12)
-    ax.legend(fontsize=8, loc='upper right')
+    ax.set_ylabel(r'Trainable parameters $\times$ ($10^4$)', fontsize=12)
+    ax.legend(fontsize=10, loc='center right')
 
     # Save figure
     # ax.set_rasterized(True)
@@ -632,15 +679,6 @@ def main():
 ######################################
 
 
-    ref = [30.0, 200000.0]
-
-    hv_val = hypervolume(points = points_val)
-    result_val = hv_val.compute(ref_point = ref)
-    print ("hypervolume_validation", result_val)
-
-    hv_test = hypervolume(points = points_test)
-    result_test = hv_test.compute(ref_point = ref)
-    print ("hypervolume_test", result_test)
 
 
 if __name__ == '__main__':

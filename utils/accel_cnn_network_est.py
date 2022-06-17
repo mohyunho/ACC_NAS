@@ -26,6 +26,8 @@ from matplotlib.pyplot import cm
 import matplotlib.figure
 import cvxpy as cp
 from scipy.optimize import curve_fit
+from scipy.stats import truncnorm
+
 
 
 from math import sqrt
@@ -44,7 +46,7 @@ from tensorflow.keras.layers import Conv1D
 from tensorflow.keras.layers import MaxPooling1D
 from tensorflow.keras.layers import concatenate
 from tensorflow.keras.callbacks import EarlyStopping, ModelCheckpoint, LearningRateScheduler
-# from tensorflow.python.framework.convert_to_constants import  convert_variables_to_constants_v2_as_graph
+from tensorflow.python.framework.convert_to_constants import  convert_variables_to_constants_v2_as_graph
 from tensorflow.keras.initializers import GlorotNormal, GlorotUniform
 
 from utils.dnn import one_dcnn
@@ -66,6 +68,11 @@ current_dir = os.path.dirname(os.path.abspath(__file__))
 pic_dir = os.path.join(current_dir, 'Curves')
 if not os.path.exists(pic_dir):
     os.makedirs(pic_dir)
+
+
+def get_truncated_normal(mean=0, sd=1, low=0, upp=10):
+    return truncnorm(
+        (low - mean) / sd, (upp - mean) / sd, loc=mean, scale=sd)
 
 
 all_models = {}
@@ -104,6 +111,11 @@ def hill_custom(x, a, b, c, d):
     return a + (b-a)/(1 + (10**(x-c))**d)
 all_models["hill_custom"] = hill_custom
 
+def log_custom(x, a, b, c, d):
+    # return a * (np.log(x-b) / np.log(c) ) + d
+    return a * np.log(x-c+1)  + d
+all_models["log_custom"] = log_custom
+
 
 # def logistic_curve(x, a, b, c,d):
 #     """
@@ -129,6 +141,18 @@ def rmse(y_true, y_pred):
 def train_params_count(model):
     trainableParams = np.sum([np.prod(v.get_shape()) for v in model.trainable_weights])
     return trainableParams
+
+def get_flops(model):
+    concrete = tf.function(lambda inputs: model(inputs))
+    concrete_func = concrete.get_concrete_function(
+        [tf.TensorSpec([1, *inputs.shape[1:]]) for inputs in model.inputs])
+    frozen_func, graph_def = convert_variables_to_constants_v2_as_graph(concrete_func)
+    with tf.Graph().as_default() as graph:
+        tf.graph_util.import_graph_def(graph_def, name='')
+        run_meta = tf.compat.v1.RunMetadata()
+        opts = tf.compat.v1.profiler.ProfileOptionBuilder.float_operation()
+        flops = tf.compat.v1.profiler.profile(graph=graph, run_meta=run_meta, cmd="op", options=opts)
+        return flops.total_float_ops
 
 
 def rmse(y_true, y_pred):
@@ -212,11 +236,7 @@ class network_fit(object):
         lr_scheduler = LearningRateScheduler(scheduler)
 
         # Validation RMSE observation history
-        if self.n_layers <=4:
-            # numb_obeservation = int(2* self.ob_ep)      
-            numb_obeservation = self.ob_ep
-        else:
-            numb_obeservation = self.ob_ep
+        numb_obeservation = self.ob_ep
 
         print ("self.n_layers", self.n_layers)
         print ("numb_obeservation", numb_obeservation)
@@ -260,9 +280,41 @@ class network_fit(object):
         curve_y_lst = []
         y_func_end_lst = []
 
+        numb_obeservation_default = numb_obeservation
+        
+        # X = get_truncated_normal(mean=0.1, sd=0.02, low=0.0, upp=0.2)
+        # X = get_truncated_normal(mean=0.2, sd=0.05, low=0.0, upp=0.3)
+        print ("min(val_rmse_hist)", min(val_rmse_hist))
+        print ("1/min(val_rmse_hist)", 1/min(val_rmse_hist))
+        X = get_truncated_normal(mean=1/min(val_rmse_hist), sd=0.02, low=0.0, upp=0.2)
+        noise = X.rvs(2)
+
+
+
+        estimation1 = min(val_rmse_hist)- noise[0]
+        estimation2 = estimation1 - noise[1]
+        # estimation3 = estimation2 - noise[2]
+        
+        y_obesrvation.append(estimation1)
+        y_obesrvation.append(estimation2)
+        # y_obesrvation.append(estimation3)
+
+        print (noise)
+        print ("estimation1", estimation1)
+        print ("estimation2", estimation2)
+        # print ("estimation3", estimation3)
+        print ("y_obesrvation", y_obesrvation)
+
+        numb_obeservation = numb_obeservation + 2
+        # numb_obeservation = numb_obeservation + 3
+
+
         x_observation = x_max[self.st_ep:numb_obeservation]
         print ("len(x_observation)", len(x_observation))
-        y_obesrvation = val_rmse_hist[self.st_ep:]
+        y_obesrvation = y_obesrvation[self.st_ep:]
+
+        ax.scatter([ numb_obeservation-1, numb_obeservation], [estimation1, estimation2], facecolor="black", edgecolors=(0.0, 0.0, 0.0), zorder=4, s=20,  label="Estimation" )
+        # ax.scatter([numb_obeservation-2, numb_obeservation-1, numb_obeservation], [estimation1, estimation2, estimation3], facecolor="black", edgecolors=(0.0, 0.0, 0.0), zorder=4, s=20,  label="Estimation" )
 
   
         for index, (key, value) in enumerate(all_models.items()):
@@ -287,7 +339,9 @@ class network_fit(object):
                 y_func = value(x_observation, fitting_parameters[0], fitting_parameters[1], fitting_parameters[2], fitting_parameters[3])
                 next_y = value(next_x, fitting_parameters[0], fitting_parameters[1], fitting_parameters[2], fitting_parameters[3])
             
-            y_func_end_lst.append(y_func[-1])
+            print ("next_y", next_y)
+
+            y_func_end_lst.append(next_y[-1])
             y_func_lst.append(y_func)
             curve_y_lst.append(np.append(y_func, next_y))
             # next_y_lst.append(next_y)
@@ -302,8 +356,7 @@ class network_fit(object):
 
 
 
-        min_y_observation = min(y_obesrvation)
-        print ("min_y_observation", min_y_observation)
+
 
         # list of 1d arrays to 2d array
         print ("y_func_lst", y_func_lst)
@@ -323,48 +376,13 @@ class network_fit(object):
         print(coeff.value)
 
         if coeff.value is None:
-            print ("cannot fit the curve, assign rms avg")
-            # rms = y_obesrvation[-1]
+            print ("cannot fit the curve, assign rms 20")
             rms = sum(y_func_end_lst) / len(y_func_end_lst)
-            rms = round(rms, 4)
-
-
-        else:            
-
-
-            # Combine (linear combination) of curves
-            curves_arrays = np.transpose(np.stack(curve_y_lst, axis=0))
-            print("curves_arrays.shape", curves_arrays.shape)
-            combined_y = curves_arrays  @ coeff.value 
-            print ("combined_y", combined_y)
-
-
-            deviation = abs(combined_y[-1] - y_obesrvation[-1])
-            difference = combined_y[-1] - min_y_observation
-            print ("difference", difference)
-
-            if deviation >= 1 :
-                rms = sum(y_func_end_lst) / len(y_func_end_lst)
-                rms = round(rms, 4)
-                ax.scatter(x_max[-1], rms, marker="x", facecolor=(1.0, 1.0, 0.0), edgecolors=(0.0, 0.0, 0.0), zorder=5, s=120,  label="Fitness" )
-                
-
-            else:
-                if difference >= 0:
-                    rms = min_y_observation - abs(difference)
-                    rms = round(rms, 4)
-                    ax.scatter(x_max[-1], rms, marker="*", facecolor=(1.0, 1.0, 0.0), edgecolors=(0.0, 0.0, 0.0), zorder=5, s=120,  label="Fitness" )
-                else:
-                    rms = min_y_observation
-                    rms = round(rms, 4)
-                    ax.scatter(x_max[-1], rms, marker="^", facecolor=(1.0, 1.0, 0.0), edgecolors=(0.0, 0.0, 0.0), zorder=5, s=120,  label="Fitness" )
-
-            
+            # rms = 30.0
 
             c = next(color)
             # ax.plot(x_max, combined_y, color=c, marker='D', linewidth=1.5, label="combined", zorder=2)
-            ax.plot(x_max[self.st_ep:], combined_y, color=c, marker='D', linewidth=1.5, label="combined", zorder=2)
-            
+            ax.scatter(x_max[-1], rms, color=c, label="combined", zorder=2)
 
             ax.legend(loc='upper right', fontsize=12)
             ax.set_xlabel('Epoch', fontsize=15)
@@ -374,13 +392,57 @@ class network_fit(object):
             ax.set_xticklabels(x_epoch, rotation=60)
             ymax_plot = 25
             ax.set_ylim(0, ymax_plot)
-            ax.vlines(numb_obeservation,  0, ymax_plot, colors=(0.7, 0.7, 0.7), linestyle='-.',linewidth=1, zorder=3)
+            ax.vlines(numb_obeservation_default,  0, ymax_plot, colors=(0.7, 0.7, 0.7), linestyle='-.',linewidth=1, zorder=3)
+
+            fig.suptitle('Last ob: %s, Estimated validation RSME: %s' %(round(y_obesrvation[-3],4),rms), fontsize=12)
+            # fig.suptitle('Last ob: %s, Estimated validation RSME: %s' %(round(y_obesrvation[-4],4),rms), fontsize=12)
+            fig.savefig(os.path.join(pic_dir, 'curve_extpl_%s.png' %str(geno_lst)), bbox_inches='tight')
 
 
+        else:
+            # Combine (linear combination) of curves
+            curves_arrays = np.transpose(np.stack(curve_y_lst, axis=0))
+            print("curves_arrays.shape", curves_arrays.shape)
+            combined_y = curves_arrays  @ coeff.value 
+            print ("combined_y", combined_y)
+
+
+
+            c = next(color)
+            # ax.plot(x_max, combined_y, color=c, marker='D', linewidth=1.5, label="combined", zorder=2)
+
+            extpl_rmse = combined_y[-1]
             print ("combined_y[-1]", combined_y[-1])
 
+            if abs(y_obesrvation[-1] - combined_y[-1])>=1.5:
+                rms = sum(y_func_end_lst) / len(y_func_end_lst)
+                ax.scatter(x_max[-1], rms, color=c, label="combined", zorder=2)
 
-            fig.suptitle('Last ob: %s, Estimated validation RSME: %s' %(round(y_obesrvation[-1],4),rms), fontsize=12)
+            else:
+                rms = round(extpl_rmse, 4)
+                ax.plot(x_max[self.st_ep:], combined_y, color=c, marker='D', linewidth=1.5, label="combined", zorder=2)
+
+            ax.legend(loc='upper right', fontsize=12)
+            ax.set_xlabel('Epoch', fontsize=15)
+            ax.set_ylabel('Validation RMSE', fontsize=15)
+            x_epoch = np.arange(1,31)
+            ax.set_xticks(x_epoch)
+            ax.set_xticklabels(x_epoch, rotation=60)
+            ymax_plot = 25
+            ax.set_ylim(0, ymax_plot)
+            ax.vlines(numb_obeservation_default,  0, ymax_plot, colors=(0.7, 0.7, 0.7), linestyle='-.',linewidth=1, zorder=3)
+
+
+            # if (extpl_rmse <= 5.0) or (abs(y_obesrvation[-1] - combined_y[-1])>=3):
+            #     rms = 30.0
+            # else:
+            #     rms = round(extpl_rmse, 4)
+
+
+
+
+            fig.suptitle('Last ob: %s, Estimated validation RSME: %s' %(round(y_obesrvation[-3],4),rms), fontsize=12)
+            # fig.suptitle('Last ob: %s, Estimated validation RSME: %s' %(round(y_obesrvation[-4],4),rms), fontsize=12)
             fig.savefig(os.path.join(pic_dir, 'curve_extpl_%s.png' %str(geno_lst)), bbox_inches='tight')
 
 

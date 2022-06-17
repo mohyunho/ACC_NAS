@@ -301,9 +301,9 @@ class network_fit(object):
             ax.plot(x_max[self.st_ep:], np.append(y_func, next_y), color=c, marker='o', linestyle='dashed', linewidth=2, label=key, zorder=1)
 
 
-
         min_y_observation = min(y_obesrvation)
         print ("min_y_observation", min_y_observation)
+
 
         # list of 1d arrays to 2d array
         print ("y_func_lst", y_func_lst)
@@ -324,47 +324,22 @@ class network_fit(object):
 
         if coeff.value is None:
             print ("cannot fit the curve, assign rms avg")
-            # rms = y_obesrvation[-1]
             rms = sum(y_func_end_lst) / len(y_func_end_lst)
-            rms = round(rms, 4)
+            if rms >= y_obesrvation[-1]:
+                rms = y_obesrvation[-1]
+                rms = round(rms, 4)
 
 
-        else:            
-
-
+        else:
             # Combine (linear combination) of curves
             curves_arrays = np.transpose(np.stack(curve_y_lst, axis=0))
             print("curves_arrays.shape", curves_arrays.shape)
             combined_y = curves_arrays  @ coeff.value 
             print ("combined_y", combined_y)
 
-
-            deviation = abs(combined_y[-1] - y_obesrvation[-1])
-            difference = combined_y[-1] - min_y_observation
-            print ("difference", difference)
-
-            if deviation >= 1 :
-                rms = sum(y_func_end_lst) / len(y_func_end_lst)
-                rms = round(rms, 4)
-                ax.scatter(x_max[-1], rms, marker="x", facecolor=(1.0, 1.0, 0.0), edgecolors=(0.0, 0.0, 0.0), zorder=5, s=120,  label="Fitness" )
-                
-
-            else:
-                if difference >= 0:
-                    rms = min_y_observation - abs(difference)
-                    rms = round(rms, 4)
-                    ax.scatter(x_max[-1], rms, marker="*", facecolor=(1.0, 1.0, 0.0), edgecolors=(0.0, 0.0, 0.0), zorder=5, s=120,  label="Fitness" )
-                else:
-                    rms = min_y_observation
-                    rms = round(rms, 4)
-                    ax.scatter(x_max[-1], rms, marker="^", facecolor=(1.0, 1.0, 0.0), edgecolors=(0.0, 0.0, 0.0), zorder=5, s=120,  label="Fitness" )
-
-            
-
             c = next(color)
             # ax.plot(x_max, combined_y, color=c, marker='D', linewidth=1.5, label="combined", zorder=2)
             ax.plot(x_max[self.st_ep:], combined_y, color=c, marker='D', linewidth=1.5, label="combined", zorder=2)
-            
 
             ax.legend(loc='upper right', fontsize=12)
             ax.set_xlabel('Epoch', fontsize=15)
@@ -376,9 +351,23 @@ class network_fit(object):
             ax.set_ylim(0, ymax_plot)
             ax.vlines(numb_obeservation,  0, ymax_plot, colors=(0.7, 0.7, 0.7), linestyle='-.',linewidth=1, zorder=3)
 
-
+            extpl_rmse = combined_y[-1]
             print ("combined_y[-1]", combined_y[-1])
+            # if (extpl_rmse <= 5.0) or (abs(y_obesrvation[-1] - combined_y[-1])>=3):
+            #     rms = 30.0
+            # else:
+            #     rms = round(extpl_rmse, 4)
 
+
+            if abs(sum(y_func_end_lst) / len(y_func_end_lst) - combined_y[-1])>=1:
+                rms = sum(y_func_end_lst) / len(y_func_end_lst)
+                rms = round(rms, 4)
+            else:
+                rms = round(extpl_rmse, 4)
+
+            if rms >= min_y_observation:
+                rms = min_y_observation
+                rms = round(rms, 4)
 
             fig.suptitle('Last ob: %s, Estimated validation RSME: %s' %(round(y_obesrvation[-1],4),rms), fontsize=12)
             fig.savefig(os.path.join(pic_dir, 'curve_extpl_%s.png' %str(geno_lst)), bbox_inches='tight')

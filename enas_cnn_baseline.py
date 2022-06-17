@@ -41,7 +41,7 @@ data_filedir = os.path.join(current_dir, 'N-CMAPSS')
 data_filepath = os.path.join(current_dir, 'N-CMAPSS', 'N-CMAPSS_DS02-006.h5')
 sample_dir_path = os.path.join(data_filedir, 'Samples_whole')
 
-model_temp_path = os.path.join(current_dir, 'Models', 'oned_cnn_rep.h5')
+model_temp_path = os.path.join(current_dir, 'Models', 'oned_cnn_rep_ori.h5')
 tf_temp_path = os.path.join(current_dir, 'TF_Model_tf')
 
 pic_dir = os.path.join(current_dir, 'Figures')

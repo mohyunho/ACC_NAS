@@ -27,9 +27,6 @@ import matplotlib.figure
 import matplotlib.backends.backend_agg as agg
 import matplotlib.backends.backend_svg as svg
 
-from matplotlib.pyplot import cm
-
-
 from matplotlib import gridspec
 import math
 import random
@@ -69,9 +66,6 @@ from tensorflow.keras.layers import concatenate
 from tensorflow.keras.callbacks import EarlyStopping, ModelCheckpoint, LearningRateScheduler
 
 from pygmo import *
-
-import cvxpy as cp
-from scipy.optimize import curve_fit
 
 from tensorflow.python.framework.convert_to_constants import  convert_variables_to_constants_v2_as_graph
 
@@ -124,63 +118,10 @@ sample_dir_path = os.path.join(data_filedir, 'Samples_whole')
 model_temp_path = os.path.join(current_dir, 'Models', 'oned_cnn_rep.h5')
 tf_temp_path = os.path.join(current_dir, 'TF_Model_tf')
 
-pic_dir = os.path.join(current_dir, 'PF')
+pic_dir = os.path.join(current_dir, 'Figures')
 
 log_dir_path = os.path.join(current_dir, 'EA_log')
 
-if not os.path.exists(pic_dir):
-    os.makedirs(pic_dir)
-
-all_models = {}
-
-#def pow3(x, c, a, alpha):
-#    return  c - a * x**(-alpha)
-#all_models["pow3"] = pow3
-
-# def loglog_linear(x, a, b, c):
-#     # x = x+1
-#     x = np.log(x)
-#     return -1*np.log(np.abs(a*x - b))+c
-# all_models["loglog_linear"] = loglog_linear
-
-# def pow4(x, c, a, b, alpha):
-#     return c - (a*x+b)**-alpha
-# all_models["pow4"] = pow4
-
-# def exp(x, a,b,c,d):
-#     return a + np.exp(b*(x**(-c)))+d
-# all_models["exp"] = exp
-
-
-def mmf(x, alpha, beta, kappa, delta):
-    return alpha - (alpha - beta) / (1. + np.abs(kappa * x)**delta)
-all_models["mmf"] = mmf
-
-def janoschek(x, a, beta, k, delta):
-    return a - (a - beta) * np.exp(-k*x**delta)
-all_models["janoschek"] = janoschek
-
-def weibull(x, alpha, beta, kappa, delta):
-    x = 1 + x
-    return alpha - (alpha - beta) * np.exp(-(kappa * x)**delta)
-all_models["weibull"] = weibull
-
-# def ilog2(x, c, a, b):
-#     x = 1 + x
-#     assert(np.all(x>1))
-#     return -c + a / np.log(b*x)
-# all_models["ilog2"] = ilog2
-
-def reverse_gompertz(x, a, c, b, d):
-
-    return a + (c-a)*(1-np.exp(-np.exp(-b*(x-d))))
-    #return a + b * np.exp(np.exp(-k*(x-i)))
-all_models["reverse_gompertz"] = reverse_gompertz
-
-
-def hill_custom(x, a, b, c, d):
-    return a + (b-a)/(1 + (10**(x-c))**d)
-all_models["hill_custom"] = hill_custom
 
 
 '''
@@ -308,13 +249,12 @@ def main():
     parser.add_argument('-sub', type=int, default=1, help='subsampling stride')
     parser.add_argument('--sampling', type=int, default=1, help='sub sampling of the given data. If it is 10, then this indicates that we assumes 0.1Hz of data collection')
     parser.add_argument('-t', type=int, required=True, help='trial')
-    parser.add_argument('--pop', type=int, default=50, required=False, help='population size of EA')
-    parser.add_argument('--gen', type=int, default=50, required=False, help='generations of evolution')
+    parser.add_argument('--pop', type=int, default=20, required=False, help='population size of EA')
+    parser.add_argument('--gen', type=int, default=10, required=False, help='generations of evolution')
     parser.add_argument('--device', type=str, default="GPU", help='Use "basic" if GPU with cuda is not available')
-    parser.add_argument('--obj', type=str, default="moo", help='Use "soo" for single objective and "moo" for multiobjective')
-    parser.add_argument('--abl', type=str, default="ori", help='"ori or extpl"')
-    parser.add_argument('-obep', type=int, default=15, help='ob ep')
-    parser.add_argument('-start', type=int, default=2, help='start ep')
+    parser.add_argument('--obj', type=str, default="moo", help='Use "soo"s for single objective and "moo" for multiobjective')
+    parser.add_argument('--abl', type=str, default="combined", help='"ori or extpl"')
+    parser.add_argument('--thres', type=int, default=5, required=False, help='threshold no. params for training')
     args = parser.parse_args()
 
     win_len = args.w
@@ -330,8 +270,7 @@ def main():
     sub = args.sub
     sampling = args.sampling
     ablation = args.abl
-    ob_ep = args.obep
-    st_ep = args.start
+    th = args.thres
 
     lr = 10**(-1*4)
 
@@ -345,15 +284,16 @@ def main():
 
 
 
-    prft_filename = 'prft_out_%s_%s_%s_%s_%s.csv'  %(ablation, pop_size, n_generations, trial, ob_ep)
+    prft_filename = 'prft_out_%s_%s_%s_%s_%s_%s.csv'  %(ablation, pop_size, n_generations, trial, ep, th)
 
     prft_log_df = pd.read_csv(os.path.join(log_dir_path, prft_filename), header=0, names=["p1", 'p2', 'p3', 'p4'])
 
 
     # mutate_filename = os.path.join(log_dir_path, 'mute_log_%s_%s_%s_%s_%s_%s.csv' % (ablation, pop_size, n_generations, obj, trial, ep))
-
-    # # mutate_filename = 'EA_log/mute_log_%s_%s_%s_%s.csv' % (pop_size, n_generations, obj, trial)
     # ea_log_df = pd.read_csv(mutate_filename)
+
+    # mutate_filename = 'EA_log/mute_log_%s_%s_%s_%s.csv' % (pop_size, n_generations, obj, trial)
+
 
     # last_gen_df = ea_log_df.loc[ea_log_df['gen'] == n_generations]
     # print ("last_gen_df", last_gen_df)
@@ -452,15 +392,12 @@ def main():
 
     for idx, row in prft_log_df.iterrows():
 
-        
 
         n_layers = int(row['p1'] )
         n_filters = int(row['p2'] ) 
         kernel_size = int(row['p3'])  
         n_mlp = int(row['p4'] ) *10
         one_d_cnn_model = one_dcnn(n_layers, n_filters, kernel_size, n_mlp, train_sample_array, initializer)
-
-        geno_lst = [n_layers, n_filters, kernel_size, n_mlp]
 
         print (n_layers, n_filters, kernel_size, n_mlp)
         # one_d_cnn_model = one_dcnn_cmapss(sample_array)
@@ -485,7 +422,7 @@ def main():
         #                                 ModelCheckpoint(model_temp_path, monitor='val_loss', save_best_only=True, mode='min', verbose=1)]
         #                 )
 
-        history = one_d_cnn_model.fit(train_sample_array, train_label_array, epochs=ep, batch_size=bs,
+        history = one_d_cnn_model.fit(train_sample_array, train_label_array, epochs=30, batch_size=bs,
                 validation_data=(val_sample_array, val_label_array), verbose=2,
                 callbacks=[lr_scheduler, EarlyStopping(monitor='val_loss', min_delta=0, patience=pt, verbose=1,
                                                     mode='min'),
@@ -542,9 +479,9 @@ def main():
         output_array = np.concatenate(output_lst)[:, 0]
         trytg_array = np.concatenate(truth_lst)
 
-        test_rms = sqrt(mean_squared_error(output_array, trytg_array))
-        print(test_rms)
-        test_rms = round(test_rms, 2)
+        rms = sqrt(mean_squared_error(output_array, trytg_array))
+        print(rms)
+        rms = round(rms, 2)
 
         end = time.time()
         inference_time = end - start
@@ -568,163 +505,20 @@ def main():
 
         print("Training time: ", training_time)
         print("Inference time: ", inference_time)
-        print("number of trainable parameters: ", num_tran_params )
+        print("number of trainable parameters: ", num_tran_params/ 10000 )
         print ("score", score)
-        print("Result in RMSE: ", test_rms)
+        print("Result in RMSE: ", rms)
 
-
-        # Validation RMSE observation history
-        numb_obeservation = ob_ep
-        val_rmse_hist = history.history['val_root_mean_squared_error']  
-        x_max = np.arange(1,31)
-        x_observation = x_max[:numb_obeservation]
-        y_obesrvation = val_rmse_hist[:numb_obeservation]
-
-        fig = matplotlib.figure.Figure(figsize=(8, 6))
-        # agg.FigureCanvasAgg(fig)
-        ax = fig.add_subplot(1, 1, 1)
-        # Plot actual curve with solid line
-        ax.plot(x_observation, y_obesrvation, label="observation", color="black", linewidth=2, zorder=4)
-        color = iter(cm.rainbow(np.linspace(0, 1, len(all_models)+1)))
-
-
-        y_func_lst = []
-        curve_y_lst = []
-        y_func_end_lst = []
-
-
-        x_observation = x_max[st_ep:numb_obeservation]
-        print ("len(x_observation)", len(x_observation))
-        y_obesrvation = val_rmse_hist[st_ep:numb_obeservation]
-  
-        for index, (key, value) in enumerate(all_models.items()):
-            print ("value", value)
-            next_x = np.arange(numb_obeservation+1,31)
-            if key == "loglog_linear":
-                fitting_parameters, covariance = curve_fit(value, x_observation, y_obesrvation, p0=[10,1,10], maxfev=10000000)
-            elif key == "pow3":
-                fitting_parameters, covariance = curve_fit(value, x_observation, y_obesrvation, maxfev=10000000)
-            elif key == "ilog2":
-                fitting_parameters, covariance = curve_fit(value, x_observation, y_obesrvation, maxfev=10000000)
-            else:
-                fitting_parameters, covariance = curve_fit(value, x_observation, y_obesrvation, maxfev=10000000)
-            
-            if len(fitting_parameters)==2:
-                y_func = value(x_observation, fitting_parameters[0], fitting_parameters[1])
-                next_y = value(next_x, fitting_parameters[0], fitting_parameters[1])
-            elif len(fitting_parameters)==3:
-                y_func = value(x_observation, fitting_parameters[0], fitting_parameters[1], fitting_parameters[2])
-                next_y = value(next_x, fitting_parameters[0], fitting_parameters[1], fitting_parameters[2])
-            elif len(fitting_parameters)==4:
-                y_func = value(x_observation, fitting_parameters[0], fitting_parameters[1], fitting_parameters[2], fitting_parameters[3])
-                next_y = value(next_x, fitting_parameters[0], fitting_parameters[1], fitting_parameters[2], fitting_parameters[3])
-            
-            y_func_end_lst.append(y_func[-1])
-            y_func_lst.append(y_func)
-            curve_y_lst.append(np.append(y_func, next_y))
-            # next_y_lst.append(next_y)
-
-            
-            # ax.plot(np.append(y, next_y), 'ro')
-            c = next(color)
-            # ax.plot(next_x, next_y, color=c, marker='o', label=key)
-
-            # ax.plot(x_max, np.append(y_func, next_y), color=c, marker='o', linestyle='dashed', linewidth=2, label=key, zorder=1)
-            ax.plot(x_max[st_ep:], np.append(y_func, next_y), color=c, marker='o', linestyle='dashed', linewidth=2, label=key, zorder=1)
-
-
-
-            
-
-        # list of 1d arrays to 2d array
-        print ("y_func_lst", y_func_lst)
-        print ("y_func_end_lst", y_func_end_lst)
-        input_arrays = np.transpose(np.stack(y_func_lst, axis=0))
-        print ("input_arrays.shape", input_arrays.shape)
-        # Find coefficient of linear combination of vectors with least square (olve a least-squares problem with CVXPY) 
-        # https://www.cvxpy.org/examples/basic/least_squares.html
-        # m: length of vector, n: numb of curves
-        # Shape of A:(m, n), length of b: (m)
-        n = len(all_models)
-        coeff = cp.Variable(n)
-        cost = cp.sum_squares(input_arrays @ coeff - y_obesrvation)
-        prob = cp.Problem(cp.Minimize(cost))
-        prob.solve()
-
-        print("The optimal coeff is")
-        print(coeff.value)
-
-        if coeff.value is None:
-            print ("cannot fit the curve, assign rms 20")
-            rms = sum(y_func_end_lst) / len(y_func_end_lst)
-            if rms >= y_obesrvation[-1]:
-                rms = y_obesrvation[-1]
-                rms = round(rms, 4)
-
-        else:
-            # Combine (linear combination) of curves
-            curves_arrays = np.transpose(np.stack(curve_y_lst, axis=0))
-            print("curves_arrays.shape", curves_arrays.shape)
-            combined_y = curves_arrays  @ coeff.value 
-            print ("combined_y", combined_y)
-
-
-
-            c = next(color)
-            # ax.plot(x_max, combined_y, color=c, marker='D', linewidth=1.5, label="combined", zorder=2)
-            ax.plot(x_max[st_ep:], combined_y, color=c, marker='D', linewidth=1.5, label="combined", zorder=2)
-
-
-            ax.legend(loc='upper right', fontsize=12)
-            ax.set_xlabel('Epoch', fontsize=15)
-            ax.set_ylabel('Validation RMSE', fontsize=15)
-            x_epoch = np.arange(1,31)
-            ax.set_xticks(x_epoch)
-            ax.set_xticklabels(x_epoch, rotation=60)
-            ymax_plot = 25
-            ax.set_ylim(0, ymax_plot)
-            ax.vlines(numb_obeservation,  0, ymax_plot, colors=(0.7, 0.7, 0.7), linestyle='-.',linewidth=1, zorder=3)
-
-            extpl_rmse = combined_y[-1]
-            print ("combined_y[-1]", combined_y[-1])
-            # if (extpl_rmse <= 5.0) or (abs(y_obesrvation[-1] - combined_y[-1])>=3):
-            #     rms = 30.0
-            # else:
-            #     rms = round(extpl_rmse, 4)
-
-            if abs(y_obesrvation[-1] - combined_y[-1])>=1:
-                rms = sum(y_func_end_lst) / len(y_func_end_lst)
-                rms = round(rms, 4)
-            else:
-                rms = round(extpl_rmse, 4)
-
-            if rms >= y_obesrvation[-1]:
-                rms = y_obesrvation[-1]
-                rms = round(rms, 4)
-
-            fig.suptitle('Last ob: %s, Estimated validation RSME: %s' %(round(y_obesrvation[-1],4),rms), fontsize=12)
-            fig.savefig(os.path.join(pic_dir, 'curve_extpl_%s.png' %str(geno_lst)), bbox_inches='tight')
-
-            # val_rmse_extpl = round(combined_y[-1], 4)
-            val_rmse_extpl = rms
-
-            if val_rmse_extpl >=15:
-                val_rmse_extpl = 15
-
-
-
-
-        last_gen_rmse_lst.append(test_rms)
+        last_gen_rmse_lst.append(rms)
         last_gen_score_lst.append(score)
-        last_gen_numparams_lst.append(num_tran_params / 10000)
+        last_gen_numparams_lst.append(num_tran_params/ 10000)
         last_gen_traintime_lst.append(training_time)
         last_gen_infertime_lst.append(inference_time)
-        last_gen_val_lst.append(val_rmse_extpl)
-
+        last_gen_val_lst.append(val_rmse_hist[-1])
 
         
-        points_val.append([val_rmse_extpl, num_tran_params / 10000])
-        points_test.append([test_rms, num_tran_params / 10000])
+        points_val.append([val_rmse_hist[-1], num_tran_params/ 10000])
+        points_test.append([rms, num_tran_params/ 10000])
     
     prft_infer_df = pd.DataFrame([])
 
@@ -732,8 +526,6 @@ def main():
     prft_infer_df['p2']  = prft_log_df['p2'].values
     prft_infer_df['p3']  = prft_log_df['p3'].values
     prft_infer_df['p4']  = prft_log_df['p4'].values
-
-    print ("last_gen_numparams_lst", last_gen_numparams_lst)
 
     prft_infer_df['train_time'] = last_gen_traintime_lst
     prft_infer_df['infer_time'] = last_gen_infertime_lst
@@ -748,14 +540,13 @@ def main():
     print ("BEST ind test score", min(last_gen_score_lst))
     print ("Average test score", statistics.mean(last_gen_score_lst) )
 
-    output_filepath = os.path.join(log_dir_path, 'inference_prft_%s_%s_%s_%s_%s_%s.csv' % (ablation, pop_size, n_generations, obj, trial, ob_ep))
+    output_filepath = os.path.join(log_dir_path, 'inference_prft_%s_%s_%s_%s_%s_%s_%s.csv' % (ablation, pop_size, n_generations, obj, trial, ep, th))
     prft_infer_df.to_csv(output_filepath, index=False)
 
 
-    print ("points_val", points_val)
-    print ("points_test", points_test)
 
     ref = [15.0, 20.0]
+
 
     hv_val = hypervolume(points = points_val)
     result_val = hv_val.compute(ref_point = ref)
@@ -767,12 +558,14 @@ def main():
 
 
 
-#####################################################
 
-    initial_pop_df = pd.read_csv(os.path.join(log_dir_path, 'inference_prft_extpl_%s_0_moo_%s_%s.csv' %(pop_size, trial, ob_ep)))
+######################
+    initial_pop_df = pd.read_csv(os.path.join(log_dir_path, 'inference_prft_ori_%s_0_moo_%s_%s.csv' %(pop_size, trial,ep)))
     initial_pop_val = initial_pop_df['val_rmse'].values
     initial_pop_params = initial_pop_df['num_params'].values
     initial_pop_rmse = initial_pop_df['RMSE'].values
+
+
 
 
 ################### pareto front plot ###############
@@ -785,7 +578,7 @@ def main():
 
     prft_rmse = prft_infer_df['val_rmse'].values
     prft_params = prft_infer_df['num_params'].values 
-    print ("prft_val_rmse", prft_rmse)
+    
     print ("prft_params", prft_params)
 
     # x_min = int(min(prft_rmse)) - 0.5
@@ -802,8 +595,7 @@ def main():
     ax.scatter(initial_pop_val, initial_pop_params, facecolor=(0.0, 0.5, 0.0),
                edgecolors=(0.0, 0.0, 0.0), zorder=1, s=40,  label="Initial population" )
 
-    ax.scatter(8.03, 1.6126, marker="D",facecolor=(0.0, 1.0, 0.0), edgecolors=(0.0, 0.0, 0.0), zorder=4,
-           s=60, label="Handcrafted CNN")
+    ax.scatter(8.03, 1.6126, marker="D",facecolor=(0.0, 1.0, 0.0), edgecolors=(0.0, 0.0, 0.0), zorder=4, s=60, label="Handcrafted CNN")
 
     x_range = np.arange(5.0, 15.5, 0.5)
     ax.set_xticks(x_range)
@@ -825,7 +617,7 @@ def main():
 
     # Save figure
     # ax.set_rasterized(True)
-    fig.savefig(os.path.join(pic_dir, 'infer_prft_val_%s_%s_%s_%s_%s.png' % (ablation, pop_size, n_generations, trial, ob_ep)), dpi=1500, bbox_inches='tight')
+    fig.savefig(os.path.join(pic_dir, 'infer_prft_val_%s_%s_%s_%s_%s.png' % (ablation, pop_size, n_generations, trial, ep)), dpi=1500, bbox_inches='tight')
     # fig.savefig(os.path.join(pic_dir, 'val_score_%s_%s_%s.eps' % (pop, gen, trial)), dpi=1500, bbox_inches='tight')
     # fig.savefig(os.path.join(pic_dir, 'val_score_%s_%s_%s.pdf' % (pop, gen, trial)), bbox_inches='tight')
 
@@ -880,13 +672,15 @@ def main():
 
     # Save figure
     # ax.set_rasterized(True)
-    fig.savefig(os.path.join(pic_dir, 'infer_prft_test_%s_%s_%s_%s_%s.png' % (ablation, pop_size, n_generations, trial, ob_ep)), dpi=1500, bbox_inches='tight')
+    fig.savefig(os.path.join(pic_dir, 'infer_prft_test_%s_%s_%s_%s_%s.png' % (ablation, pop_size, n_generations, trial, ep)), dpi=1500, bbox_inches='tight')
     # fig.savefig(os.path.join(pic_dir, 'val_score_%s_%s_%s.eps' % (pop, gen, trial)), dpi=1500, bbox_inches='tight')
     # fig.savefig(os.path.join(pic_dir, 'val_score_%s_%s_%s.pdf' % (pop, gen, trial)), bbox_inches='tight')
 
 
 
 ######################################
+
+
 
 
 if __name__ == '__main__':

@@ -12,7 +12,7 @@ from abc import abstractmethod
 import random
 import tensorflow as tf
 # from input_creator import input_gen
-from utils.cnn_network import network_fit
+from utils.score_cnn_network import network_fit
 
 seed = 0
 random.seed(seed)
@@ -97,7 +97,7 @@ class SimpleNeuroEvolutionTask(Task):
 
         cnn_net = cnn_class.trained_model()
 
-        validation, num_tran_params, train_time = cnn_class.train_net(cnn_net, lr, self.train_sample_array, self.train_label_array, self.val_sample_array,
+        validation, num_tran_params, train_time = cnn_class.score_net(cnn_net, lr, self.train_sample_array, self.train_label_array, self.val_sample_array,
                                     self.val_label_array)
 
         val_value = validation[0]
