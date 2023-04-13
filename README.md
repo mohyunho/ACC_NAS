@@ -15,9 +15,10 @@ which we search for trade-off solutions (in terms of prediction error vs. number
 method considerably reduces the training time (and, as a consequence, the total time of the evolutionary search), yet successfully discovers ar-
 chitectures compromising the two objectives.
 
-
-
 ## Note
+For more detail, please refer to our paper
+
+## References
 ```
 H. Mo and G. Iacca, 
 Accelerating Evolutionary Neural Architecture Search for Remaining Useful Life Prediction, 
