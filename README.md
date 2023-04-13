@@ -16,7 +16,7 @@ method considerably reduces the training time (and, as a consequence, the total 
 chitectures compromising the two objectives.
 
 ## Note
-For more detail, please refer to our paper
+For more detail, please refer to our paper below
 
 ## References
 ```
